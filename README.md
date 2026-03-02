@@ -2,14 +2,14 @@
 
 Projeto desenvolvido para a disciplina de Desenvolvimento Web. Focado em performance (Lighthouse 100/100) e segurança máxima.
 
-## 👥 Equipe
+## Equipe
 - **Felipe (Felpz):** Líder e DevOps
 - **Gusta Cazé:** Front-end & Performance
 - **Helena Brito:** Back-end & Auth
 - **David Moraes:** CRUD & Database
 - **Rafael Queiroz:** Security Specialist
 
-## 🛠️ Tecnologias
+## Tecnologias
 - Next.js 15
 - Tailwind CSS
 - Supabase (Auth & Database)
