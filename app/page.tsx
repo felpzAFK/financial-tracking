@@ -31,13 +31,19 @@ export default function LandingPage() {
 
           {/* ESPAÇO PARA A IMAGEM DO PORQUINHO */}
           <div className="md:w-1/2 flex justify-center mt-10 md:mt-0">
-            <div className="relative w-80 h-80 bg-green-100 rounded-full flex items-center justify-center border-4 border-[#25b461] border-dashed">
-              <span className="text-gray-400">Insira a imagem do porquinho aqui</span>
-              {/* Quando ele tiver a imagem, ele usa: 
-                  <Image src="/porquinho.png" alt="Logo" width={300} height={300} /> 
-              */}
-            </div>
-          </div>
+  <div className="relative w-80 h-80 bg-green-100 rounded-full flex items-center justify-center border-4 border-[#25b461] border-dashed overflow-hidden">
+
+    <Image 
+      src="/porcocaze1.PNG" 
+      alt="Porquinho Financial Tracking" 
+      width={320} 
+      height={320} 
+      className="object-contain p-4" 
+      priority
+    />
+
+  </div>
+</div>
         </section>
 
         {/* FEATURES (RECURSOS) */}
