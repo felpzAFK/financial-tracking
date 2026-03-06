@@ -1,88 +1,92 @@
 "use client";
 
-import React, { useState } from "react";
-import { supabase } from "@/lib/supabase"; // Certifique-se que este arquivo existe na pasta lib
+import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
-const Login = () => {
-  const [nome, setNome] = useState("");
-  const [regEmail, setRegEmail] = useState("");
-  const [regSenha, setRegSenha] = useState("");
+export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  const [logEmail, setLogEmail] = useState("");
-  const [logSenha, setLogSenha] = useState("");
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
 
-  const [logado, setLogado] = useState(false);
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-  // FUNÇÃO DE REGISTRO (CONECTA NO SUPABASE)
-  async function registrar() {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: regEmail,
-        password: regSenha,
-        options: {
-          data: { full_name: nome }
-        }
-      });
-
-      if (error) throw error;
-      alert("Sucesso! Verifique seu e-mail para confirmar o cadastro.");
-    } catch (erro: any) {
-      alert("Erro no registro: " + erro.message);
+    if (error) {
+      alert("Erro ao entrar: " + error.message);
+    } else {
+      router.push("/"); // Redireciona para a Dashboard após o login
     }
-  }
-
-  // FUNÇÃO DE LOGIN (CONECTA NO SUPABASE)
-  async function fazerLogin() {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: logEmail,
-        password: logSenha,
-      });
-
-      if (error) throw error;
-      setLogado(true);
-    } catch (erro: any) {
-      alert("Erro no login: " + erro.message);
-    }
-  }
-
-  function sair() {
-    setLogado(false);
-  }
-
-  const styles = {
-    body: { fontFamily: "Arial, sans-serif", backgroundColor: "#3b3939", display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" },
-    container: { background: "black", padding: "30px", borderRadius: "12px", boxShadow: "0 8px 16px rgba(0,0,0,0.5)", width: "350px", textAlign: "center" as const, color: "white" },
-    input: { width: "100%", margin: "10px 0", padding: "12px", borderRadius: "6px", border: "1px solid #444", backgroundColor: "#222", color: "white", boxSizing: "border-box" as const },
-    button: { width: "100%", margin: "10px 0", padding: "12px", borderRadius: "6px", border: "none", backgroundColor: "#25b461", color: "white", cursor: "pointer", fontWeight: "bold" as const },
+    setLoading(false);
   };
 
   return (
-    <div style={styles.body}>
-      {!logado ? (
-        <div style={styles.container}>
-          <h2 style={{ color: "#25b461" }}>Criar Conta</h2>
-          <input style={styles.input} placeholder="Seu Nome" value={nome} onChange={(e) => setNome(e.target.value)} />
-          <input style={styles.input} type="email" placeholder="E-mail de Registro" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} />
-          <input style={styles.input} type="password" placeholder="Senha de Registro" value={regSenha} onChange={(e) => setRegSenha(e.target.value)} />
-          <button style={styles.button} onClick={registrar}>Registrar</button>
-
-          <hr style={{ margin: "20px 0", borderColor: "#444" }} />
-
-          <h2 style={{ color: "#007bff" }}>Entrar</h2>
-          <input style={styles.input} type="email" placeholder="Seu E-mail" value={logEmail} onChange={(e) => setLogEmail(e.target.value)} />
-          <input style={styles.input} type="password" placeholder="Sua Senha" value={logSenha} onChange={(e) => setLogSenha(e.target.value)} />
-          <button style={{ ...styles.button, backgroundColor: "#007bff" }} onClick={fazerLogin}>Entrar</button>
+    <div className="min-h-screen bg-[#f4f7f6] flex items-center justify-center font-sans px-4">
+      <div className="bg-white p-10 rounded-[10px] shadow-2xl w-full max-w-[400px] border border-[#eee]">
+        {/* LOGO E TÍTULO */}
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <Image 
+              src="/porcocaze1.PNG" 
+              alt="Logo" 
+              width={60} 
+              height={60} 
+              className="rounded-md"
+            />
+          </div>
+          <h2 className="text-[1.8rem] font-bold text-[#2c3e50]">Bem-vindo</h2>
+          <p className="text-gray-500 text-sm">Acesse sua conta financeira</p>
         </div>
-      ) : (
-        <div style={styles.container}>
-          <h1>Bem-vindo!</h1>
-          <p>Login efetuado com sucesso no banco do David.</p>
-          <button style={styles.button} onClick={sair}>Sair</button>
+
+        {/* FORMULÁRIO - Estilo fiel ao seu HTML */}
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div>
+            <label className="block text-sm font-semibold text-[#2c3e50] mb-2">E-mail</label>
+            <input 
+              type="email" 
+              placeholder="seu@email.com"
+              className="w-full p-3 border border-[#ddd] rounded-[5px] focus:outline-none focus:border-[#25b461] transition-al text-gray-900"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-[#2c3e50] mb-2">Senha</label>
+            <input 
+              type="password" 
+              placeholder="••••••••"
+              className="w-full p-3 border border-[#ddd] rounded-[5px] focus:outline-none focus:border-[#25b461] transition-all text-gray-900"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full bg-[#25b461] hover:bg-[#1e914d] text-white py-3 rounded-[5px] font-bold text-lg shadow-md transition-all active:scale-[0.98]"
+          >
+            {loading ? "Entrando..." : "Entrar"}
+          </button>
+        </form>
+
+        {/* LINKS ADICIONAIS */}
+        <div className="mt-8 text-center text-sm text-gray-500">
+          <p>Ainda não tem conta? <Link href="/cadastro" className="text-[#25b461] font-bold hover:underline">Cadastre-se</Link></p>
+          <Link href="/" className="inline-block mt-4 text-[#2c3e50] hover:underline">← Voltar para a Home</Link>
         </div>
-      )}
+      </div>
     </div>
   );
-};
-
-export default Login;
+}
