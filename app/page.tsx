@@ -89,7 +89,7 @@ export default function LandingPage() {
           <p className="text-gray-300 mb-6 italic">Seu futuro financeiro em ordem.</p>
           <div className="h-px bg-gray-700 w-full mb-6"></div>
           <p>&copy; 2026 Financial Tracking - Todos os direitos reservados.</p>
-          <p className="text-sm text-gray-400 mt-2">Desenvolvido para portfólio de gestão financeira.</p>
+          <p className="text-sm text-gray-400 mt-2">Desenvolvido para 2º Avaliação de Web Coding </p>
         </div>
       </footer>
     </div>
