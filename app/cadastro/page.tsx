@@ -9,15 +9,17 @@ export default function CadastroPage() {
   const [password, setPassword] = useState("");
   const router = useRouter();
 
-  const handleCadastro = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) alert(error.message);
-    else {
-      alert("Cadastro realizado! Verifique seu e-mail.");
-      router.push("/login");
-    }
-  };
+const handleCadastro = async (e: React.FormEvent) => {
+  e.preventDefault();
+  const { error } = await supabase.auth.signUp({ email, password });
+  
+  if (error) {
+    alert("Erro: " + error.message);
+  } else {
+    // EM VEZ DE IR PARA O LOGIN DIRETO, VAI PARA A TELA DE BEM-VINDO
+    router.push("/cadastro/sucesso"); 
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#f4f7f6] flex items-center justify-center font-sans px-4">
