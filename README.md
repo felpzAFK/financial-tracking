@@ -3,10 +3,13 @@
 Projeto desenvolvido para a disciplina de Desenvolvimento Web. Focado em performance (Lighthouse 100/100) e segurança máxima.
 
 ## Equipe
-- **Felipe (Felpz):** Líder e DevOps
+- **Felipe (Felpz):** Tech Lead e Lead Front-end
+- **Helena Brito:** Back-end & Especialista em Dados
+- **David Moraes:** CRUD, Database e Segurança
+- **Victor da Costa Silva:** Auxiliar Front-End
+
+## Antigos membros
 - **Gusta Cazé:** Front-end & Performance
-- **Helena Brito:** Back-end & Auth
-- **David Moraes:** CRUD & Database
 - **Rafael Queiroz:** Security Specialist
 
 ## Tecnologias
