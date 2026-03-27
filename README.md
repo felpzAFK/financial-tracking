@@ -13,7 +13,7 @@ Projeto desenvolvido para a disciplina de Desenvolvimento Web. Focado em perform
 - **Rafael Queiroz:** Security Specialist
 
 ## Tecnologias
-- Next.js 15
+- Next.js 16.1.6 (Turbopack)
 - Tailwind CSS
 - Supabase (Auth & Database)
 - Vercel (Deploy Contínuo)
