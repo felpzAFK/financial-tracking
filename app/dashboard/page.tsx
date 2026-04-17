@@ -59,60 +59,60 @@ export default function DashboardInterno() {
     }
   };
 
-  useEffect(() => {
-    const buscarDadosReais = async () => {
-      try {
-        setACarregar(true);
-        const { data: { user } } = await supabase.auth.getUser();
+useEffect(() => {
+  const buscarDadosReais = async () => {
+    try {
+      setACarregar(true);
+      const { data: { user } } = await supabase.auth.getUser();
 
-        // 1. Lógica do Nome
-        if (user) {
-          const { data: profile } = await supabase.from('users').select('username').eq('id', user.id).single();
-          setNomeUsuario(profile?.username || user.email?.split('@')[0] || "Usuário");
-        } else {
-          const cookieValue = document.cookie.split('; ').find(row => row.startsWith('finance_user_name='))?.split('=')[1];
-          if (cookieValue) {
-            const emailDecodificado = decodeURIComponent(cookieValue);
-            setNomeUsuario(emailDecodificado.split('@')[0]);
-          } else {
-            setNomeUsuario("Usuário");
-          }
-        }
+      // 1. Pega o ID de qualquer jeito (Supabase ou Cookie)
+      const cookieId = document.cookie.split('; ').find(row => row.startsWith('finance_user_id='))?.split('=')[1];
+      const userIdFinal = user?.id || cookieId;
 
-        // 2. Busca de Transações com Filtro Inteligente (Opção B)
-        let query = supabase.from('transactions').select('*');
+      // 2. Lógica do Nome
+      if (user) {
+        const { data: profile } = await supabase.from('users').select('username').eq('id', user.id).single();
+        setNomeUsuario(profile?.username || user.email?.split('@')[0] || "Usuário");
+      } else {
+        const cookieNome = document.cookie.split('; ').find(row => row.startsWith('finance_user_name='))?.split('=')[1];
+        setNomeUsuario(cookieNome ? decodeURIComponent(cookieNome).split('@')[0] : "Usuário");
+      }
 
-        if (user?.id) {
-          // Se o professor criar conta, vê só o dele
-          query = query.eq('user_id', user.id);
-        } else {
-          // Se for o login do Felipe (via API), usa o ID fixo para não dar erro
-          query = query.eq('user_id', 'e217e6c8-f132-40f5-81fe-b72bb00849ea');
-        }
-
-        const { data, error } = await query.order('date', { ascending: false });
+      // 3. BUSCA FILTRADA (Se não tiver ID, nem busca para não vazar dado)
+      if (userIdFinal) {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('user_id', userIdFinal) // 🟢 FILTRO CRÍTICO
+          .order('date', { ascending: false });
 
         if (error) throw error;
 
         if (data) {
-          const formatadas = data.map((t: any) => ({
-            id: t.id,
-            descricao: t.description,
-            valor: t.amount,
-            tipo: t.type,
-            data: new Date(t.date).toLocaleDateString('pt-BR')
-          }));
+          const formatadas = data.map((t: any) => {
+            // 🟢 TRATAMENTO DE DATA ROBUSTO (Resolve o erro da Helena)
+            const dataPura = t.date.split('T')[0]; // Pega só AAAA-MM-DD
+            const [ano, mes, dia] = dataPura.split('-');
+            return {
+              id: t.id,
+              descricao: t.description,
+              valor: t.amount,
+              tipo: t.type,
+              data: `${dia}/${mes}/${ano}`
+            };
+          });
           setTransacoes(formatadas);
         }
-      } catch (erro) {
-        console.error("Erro ao carregar dashboard:", erro);
-      } finally {
-        setACarregar(false);
       }
-    };
+    } catch (erro) {
+      console.error("Erro ao carregar dashboard:", erro);
+    } finally {
+      setACarregar(false);
+    }
+  };
 
-    buscarDadosReais();
-  }, []);
+  buscarDadosReais();
+}, []);
 
   const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, "");

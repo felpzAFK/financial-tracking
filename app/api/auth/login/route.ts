@@ -29,6 +29,14 @@ cookieStore.set('finance_user_name', data.user.email!, {
   path: '/',
 })
 
+// No arquivo app/api/auth/login/route.ts
+cookieStore.set('finance_user_id', data.user.id, {
+  httpOnly: false, // 🟢 Importante: false para o Dashboard conseguir ler
+  secure: process.env.NODE_ENV === 'production',
+  maxAge: 60 * 60 * 24,
+  path: '/',
+});
+
     cookieStore.set('theme_preference', 'light', {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
