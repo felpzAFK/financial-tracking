@@ -52,3 +52,65 @@ body {
 .anima-modal {
   animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+@keyframes swipePage {
+  from {
+    opacity: 0.4;
+    transform: translateX(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ==========================================
+   CUSTOM SCROLLBAR (BARRA DE ROLAGEM)
+   ========================================== */
+
+/* Para Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #25b461 #f4f7f6;
+}
+
+/* Para Chrome, Edge e Safari */
+::-webkit-scrollbar {
+  width: 8px; /* Largura da barra vertical */
+  height: 8px; /* Altura da barra horizontal, se houver */
+}
+
+/* O fundo por onde a barra desliza */
+::-webkit-scrollbar-track {
+  background: #f4f7f6; /* Mesma cor do fundo do teu site */
+  border-radius: 10px;
+}
+
+/* A própria barra colorida */
+::-webkit-scrollbar-thumb {
+  background-color: #25b461; /* O teu verde neon */
+  border-radius: 10px;
+  border: 2px solid #f4f7f6; /* Cria um pequeno espaçamento nas laterais */
+}
+
+@keyframes blurFadeIn {
+  
+  from { 
+    opacity: 0; 
+    filter: blur(8px); 
+  }
+  to { 
+    opacity: 1; 
+    filter: blur(0px); 
+  }
+  
+}
+
+.anima-blur {
+  animation: blurFadeIn 0.4s ease-out forwards;
+}
+
+/* Quando o utilizador passa o rato por cima */
+::-webkit-scrollbar-thumb:hover {
+  background-color: #1e914d; /* Fica com um verde mais escuro, igual aos teus botões */
+}
