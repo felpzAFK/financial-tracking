@@ -21,12 +21,13 @@ export async function POST(req: NextRequest) {
   if (!error && data.user) {
     const cookieStore = await cookies()
 
-    cookieStore.set('finance_user_name', data.user.email!, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24,
-      path: '/',
-    })
+// Em app/api/auth/login/route.ts
+cookieStore.set('finance_user_name', data.user.email!, {
+  httpOnly: false, // 🟢 Alterar de true para false para o Dashboard conseguir ler
+  secure: process.env.NODE_ENV === 'production',
+  maxAge: 60 * 60 * 24,
+  path: '/',
+})
 
     cookieStore.set('theme_preference', 'light', {
       httpOnly: false,

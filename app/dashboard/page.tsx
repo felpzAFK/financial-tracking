@@ -15,7 +15,6 @@ export default function DashboardInterno() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [valorInput, setValorInput] = useState("");
   const [nomeUsuario, setNomeUsuario] = useState("Usuário");
-  // 🟢 CORREÇÃO 1: Adicionado <any[]> para o Vercel saber que o array terá dados
   const [transacoes, setTransacoes] = useState<any[]>([]);
   const [aCarregar, setACarregar] = useState(true);
   
@@ -23,7 +22,6 @@ export default function DashboardInterno() {
   const [tipoInput, setTipoInput] = useState("despesa");
   const [dataInput, setDataInput] = useState(new Date().toISOString().split('T')[0]);
 
-  // 🟢 CORREÇÃO 2: Tipagem explícita no reduce (acc: number, t: any) para o build passar
   const totalReceitas = transacoes
     .filter((t: any) => t.tipo === 'receita')
     .reduce((acc: number, t: any) => acc + Number(t.valor), 0);
@@ -37,15 +35,17 @@ export default function DashboardInterno() {
   const salvarNovaTransacao = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const userIdFinal = user?.id || 'e217e6c8-f132-40f5-81fe-b72bb00849ea';
+
+      if (!valorInput) return alert("Digite um valor!");
 
       const valorNumerico = parseFloat(valorInput.replace(/\./g, '').replace(',', '.'));
 
       const { error } = await supabase.from('transactions').insert([{
-        description: descricaoInput,
+        description: descricaoInput || "Nova Transação",
         amount: valorNumerico,
         type: tipoInput,
-        user_id: user.id,
+        user_id: userIdFinal,
         date: dataInput
       }]);
 
@@ -54,7 +54,8 @@ export default function DashboardInterno() {
       setIsModalOpen(false);
       window.location.reload(); 
     } catch (err) {
-      alert("Erro ao salvar!");
+      console.error(err);
+      alert("Erro ao salvar! Verifique a conexão.");
     }
   };
 
@@ -64,17 +65,36 @@ export default function DashboardInterno() {
         setACarregar(true);
         const { data: { user } } = await supabase.auth.getUser();
 
+        // 1. Lógica do Nome
         if (user) {
           const { data: profile } = await supabase.from('users').select('username').eq('id', user.id).single();
           setNomeUsuario(profile?.username || user.email?.split('@')[0] || "Usuário");
+        } else {
+          const cookieValue = document.cookie.split('; ').find(row => row.startsWith('finance_user_name='))?.split('=')[1];
+          if (cookieValue) {
+            const emailDecodificado = decodeURIComponent(cookieValue);
+            setNomeUsuario(emailDecodificado.split('@')[0]);
+          } else {
+            setNomeUsuario("Usuário");
+          }
+        }
 
-          const { data, error } = await supabase
-            .from('transactions')
-            .select('*')
-            .order('date', { ascending: false });
+        // 2. Busca de Transações com Filtro Inteligente (Opção B)
+        let query = supabase.from('transactions').select('*');
 
-          if (error) throw error;
+        if (user?.id) {
+          // Se o professor criar conta, vê só o dele
+          query = query.eq('user_id', user.id);
+        } else {
+          // Se for o login do Felipe (via API), usa o ID fixo para não dar erro
+          query = query.eq('user_id', 'e217e6c8-f132-40f5-81fe-b72bb00849ea');
+        }
 
+        const { data, error } = await query.order('date', { ascending: false });
+
+        if (error) throw error;
+
+        if (data) {
           const formatadas = data.map((t: any) => ({
             id: t.id,
             descricao: t.description,
@@ -82,14 +102,10 @@ export default function DashboardInterno() {
             tipo: t.type,
             data: new Date(t.date).toLocaleDateString('pt-BR')
           }));
-
           setTransacoes(formatadas);
-        } else {
-          const cookieValue = document.cookie.split('; ').find(row => row.startsWith('finance_user_name='))?.split('=')[1];
-          setNomeUsuario(cookieValue || "Usuário");
         }
       } catch (erro) {
-        console.error("Erro ao buscar dados do Supabase:", erro);
+        console.error("Erro ao carregar dashboard:", erro);
       } finally {
         setACarregar(false);
       }
@@ -146,18 +162,15 @@ export default function DashboardInterno() {
           </div>
         </div>
 
-        {/* CARDS DE RESUMO */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300 group">
             <h3 className="text-gray-500 text-sm font-bold tracking-wider mb-2 group-hover:text-[#25b461] transition-colors uppercase">Entradas</h3>
             <div className={`text-2xl text-[#25b461] ${rugen.className}`}>R$ {totalReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
           </div>
-
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300 group">
             <h3 className="text-gray-500 text-sm font-bold tracking-wider mb-2 group-hover:text-red-500 transition-colors uppercase">Saídas</h3>
             <div className={`text-2xl text-red-500 ${rugen.className}`}>R$ {totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
           </div>
-
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
             <div className="absolute top-0 right-0 w-2 h-full bg-[#2c3e50]"></div>
             <h3 className="text-gray-500 text-sm font-bold tracking-wider mb-2 group-hover:text-[#2c3e50] transition-colors uppercase">Saldo Atual</h3>
@@ -165,7 +178,6 @@ export default function DashboardInterno() {
           </div>
         </section>
 
-        {/* TABELA */}
         <section className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
             <h2 className="text-xl font-bold text-gray-800">Últimas Transações</h2>
@@ -208,7 +220,6 @@ export default function DashboardInterno() {
         </section>
       </main>
 
-      {/* MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
