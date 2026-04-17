@@ -15,28 +15,29 @@ export default function DashboardInterno() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [valorInput, setValorInput] = useState("");
   const [nomeUsuario, setNomeUsuario] = useState("Usuário");
-  const [transacoes, setTransacoes] = useState([]);
+  // 🟢 CORREÇÃO 1: Adicionado <any[]> para o Vercel saber que o array terá dados
+  const [transacoes, setTransacoes] = useState<any[]>([]);
   const [aCarregar, setACarregar] = useState(true);
   
-  // Estados do formulário do modal
   const [descricaoInput, setDescricaoInput] = useState("");
   const [tipoInput, setTipoInput] = useState("despesa");
   const [dataInput, setDataInput] = useState(new Date().toISOString().split('T')[0]);
 
-  // Cálculos dinâmicos (Usando 'tipo' e 'valor' conforme o mapeamento abaixo)
-  const totalReceitas = transacoes.filter((t: any) => t.tipo === 'receita').reduce((acc, t) => acc + Number(t.valor), 0);
-  const totalDespesas = transacoes.filter((t: any) => t.tipo === 'despesa').reduce((acc, t) => acc + Number(t.valor), 0);
+  // 🟢 CORREÇÃO 2: Tipagem explícita no reduce (acc: number, t: any) para o build passar
+  const totalReceitas = transacoes
+    .filter((t: any) => t.tipo === 'receita')
+    .reduce((acc: number, t: any) => acc + Number(t.valor), 0);
+
+  const totalDespesas = transacoes
+    .filter((t: any) => t.tipo === 'despesa')
+    .reduce((acc: number, t: any) => acc + Number(t.valor), 0);
+
   const saldoAtual = totalReceitas - totalDespesas;
   
-  // 1. FUNÇÃO DE SALVAR
   const salvarNovaTransacao = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      // Se não houver user logado no Supabase, avisamos o usuário
-      if (!user) {
-        alert("Para salvar, você precisa estar logado com uma conta real (ex: felipe@hotmail.com). O login 'joao' é apenas para visualização.");
-        return;
-      }
+      if (!user) return;
 
       const valorNumerico = parseFloat(valorInput.replace(/\./g, '').replace(',', '.'));
 
@@ -57,47 +58,44 @@ export default function DashboardInterno() {
     }
   };
 
-  // 2. CARREGAMENTO DOS DADOS
   useEffect(() => {
-    const buscarDados = async () => {
+    const buscarDadosReais = async () => {
       try {
         setACarregar(true);
         const { data: { user } } = await supabase.auth.getUser();
 
-        // 🟢 LÓGICA DE NOME: Supabase > Cookie Helena > "Usuário"
         if (user) {
           const { data: profile } = await supabase.from('users').select('username').eq('id', user.id).single();
-          setNomeUsuario(profile?.username || user.email?.split('@')[0] || "Felipe");
+          setNomeUsuario(profile?.username || user.email?.split('@')[0] || "Usuário");
+
+          const { data, error } = await supabase
+            .from('transactions')
+            .select('*')
+            .order('date', { ascending: false });
+
+          if (error) throw error;
+
+          const formatadas = data.map((t: any) => ({
+            id: t.id,
+            descricao: t.description,
+            valor: t.amount,
+            tipo: t.type,
+            data: new Date(t.date).toLocaleDateString('pt-BR')
+          }));
+
+          setTransacoes(formatadas);
         } else {
-          const cookieName = document.cookie.split('; ').find(row => row.startsWith('finance_user_name='))?.split('=')[1];
-          setNomeUsuario(cookieName || "Usuário");
+          const cookieValue = document.cookie.split('; ').find(row => row.startsWith('finance_user_name='))?.split('=')[1];
+          setNomeUsuario(cookieValue || "Usuário");
         }
-
-        // Buscamos as transações reais
-        const { data, error } = await supabase
-          .from('transactions')
-          .select('*')
-          .order('date', { ascending: false });
-
-        if (error) throw error;
-
-        const formatadas = data.map((t: any) => ({
-          id: t.id,
-          descricao: t.description,
-          valor: t.amount,
-          tipo: t.type,
-          data: new Date(t.date).toLocaleDateString('pt-BR')
-        }));
-
-        setTransacoes(formatadas);
       } catch (erro) {
-        console.error("Erro:", erro);
+        console.error("Erro ao buscar dados do Supabase:", erro);
       } finally {
         setACarregar(false);
       }
     };
 
-    buscarDados();
+    buscarDadosReais();
   }, []);
 
   const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,8 +115,6 @@ export default function DashboardInterno() {
 
   return (
     <div className="min-h-screen bg-[#f4f7f6] font-sans text-gray-800 relative">
-      
-      {/* HEADER */}
       <header className="bg-[#2c3e50] text-white p-4 flex justify-between items-center shadow-md sticky top-0 z-40">
         <div className="flex items-center gap-3 ml-2 md:ml-5">
           <Image src="/porcocaze1.PNG" alt="Logo" width={40} height={40} className="rounded-md" />
@@ -132,7 +128,7 @@ export default function DashboardInterno() {
         </nav>
 
         <div className="mr-2 md:mr-5 flex items-center gap-4">
-          <span className="text-sm text-gray-300 hidden sm:block">Olá, <strong className="text-white uppercase">{nomeUsuario}</strong></span>
+          <span className="text-sm text-gray-300 hidden sm:block">Olá, <strong className="text-white">{nomeUsuario}</strong></span>
           <button onClick={lidarComSair} className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md font-semibold transition text-sm text-white shadow-sm">Sair</button>
         </div>
       </header>
@@ -141,28 +137,30 @@ export default function DashboardInterno() {
         <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <div>
             <h1 className={`text-3xl text-[#2c3e50] tracking-wide ${rugen.className}`}>Bem-vindo de volta, {nomeUsuario}</h1>
-            <p className="text-gray-500 mt-1">Aqui está o resumo das suas finanças.</p>
+            <p className="text-gray-500 mt-1">Aqui está o resumo das suas finanças deste mês.</p>
           </div>
           
           <div className="hidden md:flex gap-3">
-            <Link href="/dashboard/relatorios" className="bg-white border-2 border-[#2c3e50] text-[#2c3e50] hover:bg-[#2c3e50] hover:text-white px-5 py-2.5 rounded-lg font-bold transition-all active:scale-95 shadow-sm flex items-center gap-2">📊 Ver Relatórios</Link>
-            <button onClick={() => setIsModalOpen(true)} className="bg-[#25b461] hover:bg-[#1e914d] text-white px-5 py-2.5 rounded-lg font-bold transition-all active:scale-95 shadow-md flex items-center gap-2"><span>+</span> Nova Transação</button>
+            <Link href="/dashboard/relatorios" className="bg-white border-2 border-[#2c3e50] text-[#2c3e50] hover:bg-[#2c3e50] hover:text-white px-5 py-2.5 rounded-lg font-bold transition-all duration-200 active:scale-95 shadow-sm flex items-center gap-2">📊 Ver Relatórios</Link>
+            <button onClick={() => setIsModalOpen(true)} className="bg-[#25b461] hover:bg-[#1e914d] text-white px-5 py-2.5 rounded-lg font-bold transition-all duration-200 active:scale-95 shadow-md flex items-center gap-2"><span>+</span> Nova Transação</button>
           </div>
         </div>
 
-        {/* CARDS */}
+        {/* CARDS DE RESUMO */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300 group">
-            <h3 className="text-gray-500 text-sm font-bold tracking-wider mb-2 group-hover:text-[#25b461]">ENTRADAS</h3>
+            <h3 className="text-gray-500 text-sm font-bold tracking-wider mb-2 group-hover:text-[#25b461] transition-colors uppercase">Entradas</h3>
             <div className={`text-2xl text-[#25b461] ${rugen.className}`}>R$ {totalReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
           </div>
+
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300 group">
-            <h3 className="text-gray-500 text-sm font-bold tracking-wider mb-2 group-hover:text-red-500">SAÍDAS</h3>
+            <h3 className="text-gray-500 text-sm font-bold tracking-wider mb-2 group-hover:text-red-500 transition-colors uppercase">Saídas</h3>
             <div className={`text-2xl text-red-500 ${rugen.className}`}>R$ {totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
           </div>
+
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
             <div className="absolute top-0 right-0 w-2 h-full bg-[#2c3e50]"></div>
-            <h3 className="text-gray-500 text-sm font-bold tracking-wider mb-2 group-hover:text-[#2c3e50]">SALDO ATUAL</h3>
+            <h3 className="text-gray-500 text-sm font-bold tracking-wider mb-2 group-hover:text-[#2c3e50] transition-colors uppercase">Saldo Atual</h3>
             <div className={`text-3xl text-[#2c3e50] ${rugen.className}`}>R$ {saldoAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
           </div>
         </section>
@@ -171,13 +169,12 @@ export default function DashboardInterno() {
         <section className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
             <h2 className="text-xl font-bold text-gray-800">Últimas Transações</h2>
-            <button onClick={() => setIsModalOpen(true)} className="md:hidden bg-[#25b461] text-white p-2 rounded-md text-sm font-bold">+ Nova</button>
+            <button onClick={() => setIsModalOpen(true)} className="md:hidden bg-[#25b461] text-white p-2 rounded-md text-sm font-bold active:scale-95 transition-transform">+ Nova</button>
           </div>
-          
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="text-gray-400 text-xs uppercase font-semibold border-b border-gray-100">
+                <tr className="text-gray-400 text-xs uppercase font-semibold bg-white border-b border-gray-100">
                   <th className="px-6 py-4">Data</th>
                   <th className="px-6 py-4">Descrição</th>
                   <th className="px-6 py-4">Tipo</th>
@@ -186,16 +183,22 @@ export default function DashboardInterno() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {aCarregar ? (
-                  <tr><td colSpan={4} className="text-center py-8 text-gray-500 font-bold animate-pulse">A puxar dados... ⏳</td></tr>
+                  <tr><td colSpan={4} className="text-center py-8 text-gray-500 font-bold animate-pulse">A puxar dados do servidor... ⏳</td></tr>
                 ) : transacoes.length === 0 ? (
-                  <tr><td colSpan={4} className="text-center py-8 text-gray-400">Nenhuma transação encontrada.</td></tr>
+                  <tr><td colSpan={4} className="text-center py-8 text-gray-500 font-bold">Nenhuma transação encontrada.</td></tr>
                 ) : (
                   transacoes.map((item: any) => (
                     <tr key={item.id} className="hover:bg-green-50/30 transition-colors group">
                       <td className="px-6 py-4 text-sm text-gray-500 font-medium">{item.data}</td>
                       <td className="px-6 py-4 text-sm font-bold text-gray-800">{item.descricao}</td>
-                      <td className="px-6 py-4"><span className={`px-3 py-1 rounded-full text-xs font-medium ${item.tipo === 'receita' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{item.tipo === 'receita' ? 'Receita' : 'Despesa'}</span></td>
-                      <td className={`px-6 py-4 text-right font-bold ${item.tipo === 'receita' ? 'text-green-600' : 'text-red-500'}`}>{item.tipo === 'receita' ? '+' : '-'} R$ {Number(item.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${item.tipo === 'receita' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                          {item.tipo === 'receita' ? 'Receita' : 'Despesa'}
+                        </span>
+                      </td>
+                      <td className={`px-6 py-4 text-right font-bold ${item.tipo === 'receita' ? 'text-green-600' : 'text-red-500'}`}>
+                        {item.tipo === 'receita' ? '+' : '-'} R$ {Number(item.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -217,23 +220,23 @@ export default function DashboardInterno() {
               <form className="flex flex-col gap-4">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Descrição</label>
-                  <input type="text" value={descricaoInput} onChange={(e) => setDescricaoInput(e.target.value)} placeholder="Ex: Mercado" className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#25b461]" />
+                  <input type="text" value={descricaoInput} onChange={(e) => setDescricaoInput(e.target.value)} placeholder="Ex: Conta de Luz" className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#25b461] transition" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Valor (R$)</label>
-                  <input type="text" value={valorInput} onChange={handleValorChange} placeholder="0,00" className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#25b461]" />
+                  <input type="text" value={valorInput} onChange={handleValorChange} placeholder="0,00" className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#25b461] transition" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">Tipo</label>
-                    <select value={tipoInput} onChange={(e) => setTipoInput(e.target.value)} className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#25b461] bg-white">
+                    <select value={tipoInput} onChange={(e) => setTipoInput(e.target.value)} className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#25b461] transition bg-white">
                       <option value="despesa">Saída (Despesa)</option>
                       <option value="receita">Entrada (Receita)</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">Data</label>
-                    <input type="date" value={dataInput} onChange={(e) => setDataInput(e.target.value)} className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#25b461]" />
+                    <input type="date" value={dataInput} onChange={(e) => setDataInput(e.target.value)} className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#25b461] transition text-gray-600" />
                   </div>
                 </div>
                 <button type="button" onClick={salvarNovaTransacao} className="w-full bg-[#25b461] hover:bg-[#1e914d] text-white font-bold py-3 rounded-lg mt-2 transition active:scale-[0.98]">Salvar Transação</button>
