@@ -10,22 +10,34 @@ const rugen = localFont({
   display: "swap",
 });
 
+// 1. ADICIONAMOS A INTERFACE AQUI PARA O TYPESCRIPT PARAR DE RECLAMAR
+interface TransacaoHistorico {
+  id: number;
+  descricao: string;
+  categoria: string;
+  data: string;
+  valor: number;
+  tipo: 'receita' | 'despesa';
+  receipt_url?: string | null; // A nossa coluna de anexos!
+}
+
 export default function HistoricoPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Dados mockados para popular a tabela larga
-  const transacoes = [
-    { id: 1, desc: "Salário Empresa X", cat: "Renda", data: "10/04/2026", valor: 4500.00, tipo: "receita" },
-    { id: 2, desc: "Supermercado Líder", cat: "Alimentação", data: "11/04/2026", valor: 350.20, tipo: "despesa" },
-    { id: 3, desc: "Posto Shell", cat: "Transporte", data: "12/04/2026", valor: 150.00, tipo: "despesa" },
-    { id: 4, desc: "Assinatura Netflix", cat: "Lazer", data: "13/04/2026", valor: 55.90, tipo: "despesa" },
-    { id: 5, desc: "Freelance Design", cat: "Renda Extra", data: "14/04/2026", valor: 800.00, tipo: "receita" },
+  // 2. APLICAMOS A INTERFACE AOS DADOS MOCKADOS E PADRONIZAMOS OS NOMES
+  const transacoes: TransacaoHistorico[] = [
+    { id: 1, descricao: "Salário Empresa X", categoria: "Renda", data: "10/04/2026", valor: 4500.00, tipo: "receita" },
+    // Coloquei um link falso de comprovante no Supermercado só para você ver o botão aparecer!
+    { id: 2, descricao: "Assinatura Enterprise Nexus", categoria: "Assinatura", data: "11/04/2026", valor: 249.90, tipo: "despesa", receipt_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
+    { id: 3, descricao: "Posto Shell", categoria: "Transporte", data: "12/04/2026", valor: 150.00, tipo: "despesa" },
+    { id: 4, descricao: "Assinatura Netflix", categoria: "Lazer", data: "13/04/2026", valor: 55.90, tipo: "despesa" },
+    { id: 5, descricao: "Freelance Design", categoria: "Renda Extra", data: "14/04/2026", valor: 800.00, tipo: "receita" },
   ];
 
   return (
     <div className="min-h-screen bg-[#f4f7f6] font-sans text-gray-800">
       
-{/* HEADER REUTILIZADO COM MENU */}
+      {/* HEADER REUTILIZADO COM MENU */}
       <header className="bg-[#2c3e50] text-white p-4 flex justify-between items-center shadow-md sticky top-0 z-40">
         <div className="flex items-center gap-3 ml-2 md:ml-5">
           <Image src="/porcocaze1.PNG" alt="Logo" width={40} height={40} className="rounded-md" />
@@ -99,10 +111,25 @@ export default function HistoricoPage() {
                 {transacoes.map((item) => (
                   <tr key={item.id} className="hover:bg-green-50/30 transition-colors group">
                     <td className="px-6 py-4 text-sm text-gray-500 font-medium">{item.data}</td>
-                    <td className="px-6 py-4 text-sm font-bold text-gray-800">{item.desc}</td>
+                    
+                    {/* 3. AQUI INJETAMOS O BOTÃO DO ANEXO SE A URL EXISTIR */}
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-bold text-gray-800">{item.descricao}</div>
+                      {item.receipt_url && (
+                        <a 
+                          href={item.receipt_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-xs text-[#25b461] hover:text-[#1e914d] hover:underline flex items-center gap-1 mt-1 font-semibold"
+                        >
+                          🔗 Ver Comprovante
+                        </a>
+                      )}
+                    </td>
+
                     <td className="px-6 py-4">
                       <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                        {item.cat}
+                        {item.categoria}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm font-bold text-gray-800 text-right">
