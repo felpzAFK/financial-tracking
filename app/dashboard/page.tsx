@@ -12,17 +12,12 @@ interface Transacao {
 import Image from "next/image";
 import Link from "next/link";
 import localFont from "next/font/local";
-<<<<<<< HEAD
-import { useState } from "react";
-import { signOut } from './actions';
-=======
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { createBrowserClient } from "@supabase/ssr";
 
 import SummaryCards from "./components/SummaryCards";
 import TransactionTable from "./components/TransactionTable";
 import TransactionModal from "./components/TransactionModal";
->>>>>>> main
 
 const rugen = localFont({
   src: "../../public/fonts/RugenExpanded.ttf",
@@ -35,7 +30,11 @@ export default function DashboardInterno() {
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [aCarregar, setACarregar] = useState(true);
 
-  // Cálculos do resumo
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
   const totalReceitas = transacoes
     .filter((t: Transacao) => t.tipo === 'receita')
     .reduce((acc: number, t: Transacao) => acc + Number(t.valor), 0);
@@ -46,7 +45,6 @@ export default function DashboardInterno() {
     
   const saldoAtual = totalReceitas - totalDespesas;
 
-  // Busca os dados do Supabase (A mesma lógica robusta que já estava funcionando)
   useEffect(() => {
     const buscarDadosReais = async () => {
       try {
@@ -121,17 +119,8 @@ export default function DashboardInterno() {
         </nav>
 
         <div className="mr-2 md:mr-5 flex items-center gap-4">
-<<<<<<< HEAD
-          <span className="text-sm text-gray-300 hidden sm:block">Olá, <strong className="text-white">{userName}</strong></span>
-          <form action={signOut}>
-           <button type="submit" className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md font-semibold transition text-sm text-white shadow-sm">
-           Sair
-          </button>
-           </form>
-=======
           <span className="text-sm text-gray-300 hidden sm:block">Olá, <strong className="text-white">{nomeUsuario}</strong></span>
           <button onClick={lidarComSair} className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md font-semibold transition text-sm text-white shadow-sm">Sair</button>
->>>>>>> main
         </div>
       </header>
 
@@ -148,7 +137,6 @@ export default function DashboardInterno() {
           </div>
         </div>
 
-        {/* Aqui injetamos os componentes que você criou! */}
         <SummaryCards receitas={totalReceitas} despesas={totalDespesas} saldo={saldoAtual} />
         
         <TransactionTable 
@@ -156,10 +144,8 @@ export default function DashboardInterno() {
           aCarregar={aCarregar} 
           onOpenModal={() => setIsModalOpen(true)} 
         />
-
       </main>
 
-      {/* O Modal de Nova Transação agora vive no próprio arquivo dele */}
       <TransactionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
