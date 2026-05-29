@@ -31,10 +31,10 @@ export default function CadastroSucesso() {
         </p>
 
         <Link 
-          href="/" 
+          href="/dashboard" 
           className="block w-full bg-[#25b461] hover:bg-[#1e914d] text-white py-3 rounded-[5px] font-bold text-lg shadow-md transition-all active:scale-95"
         >
-          Ir para a Página Inicial
+          Ir para o Dashboard
         </Link>
       </div>
     </div>

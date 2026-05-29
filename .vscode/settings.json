@@ -1,0 +1,5 @@
+{
+    "powermode.shake.enabled": false,
+    "powermode.combo.location": "editor",
+    "powermode.presets": "clippy"
+}
