@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import localFont from "next/font/local";
 import { useState } from "react";
+import { signOut } from './actions';
 
 const rugen = localFont({
   src: "../../public/fonts/RugenExpanded.ttf",
@@ -27,9 +28,11 @@ export default function DashboardInterno() {
         </div>
         <div className="mr-2 md:mr-5 flex items-center gap-4">
           <span className="text-sm text-gray-300 hidden sm:block">Olá, <strong className="text-white">{userName}</strong></span>
-          <button className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md font-semibold transition text-sm text-white shadow-sm">
-            Sair
+          <form action={signOut}>
+           <button type="submit" className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md font-semibold transition text-sm text-white shadow-sm">
+           Sair
           </button>
+           </form>
         </div>
       </header>
 
