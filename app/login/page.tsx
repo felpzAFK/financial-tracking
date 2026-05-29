@@ -39,7 +39,7 @@ export default function LoginPage() {
         const dados = await resposta.json();
         setErro(dados.error || "Usuário ou senha inválidos.");
       }
-    } catch (err) {
+    } catch {
       setErro("Erro de conexão com o servidor.");
     } finally {
       setCarregando(false);
@@ -67,7 +67,7 @@ export default function LoginPage() {
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Digite seu e-mail" 
               className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#25b461] transition bg-gray-50 focus:bg-white text-gray-900 font-medium"
-              required
+              required 
             />
           </div>
 

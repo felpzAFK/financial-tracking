@@ -1,10 +1,23 @@
 "use client";
 
+interface Transacao {
+  id: number;
+  descricao: string;
+  valor: number;
+  tipo: 'receita' | 'despesa';
+  data: string;
+  receipt_url?: string | null;
+}
+
 import Image from "next/image";
 import Link from "next/link";
 import localFont from "next/font/local";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+
+import SummaryCards from "./components/SummaryCards";
+import TransactionTable from "./components/TransactionTable";
+import TransactionModal from "./components/TransactionModal";
 
 const rugen = localFont({
   src: "../../public/fonts/RugenExpanded.ttf",
@@ -13,119 +26,78 @@ const rugen = localFont({
 
 export default function DashboardInterno() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [valorInput, setValorInput] = useState("");
   const [nomeUsuario, setNomeUsuario] = useState("Usuário");
-  const [transacoes, setTransacoes] = useState<any[]>([]);
+  const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [aCarregar, setACarregar] = useState(true);
-  
-  const [descricaoInput, setDescricaoInput] = useState("");
-  const [tipoInput, setTipoInput] = useState("despesa");
-  const [dataInput, setDataInput] = useState(new Date().toISOString().split('T')[0]);
 
+  // Cálculos do resumo
   const totalReceitas = transacoes
-    .filter((t: any) => t.tipo === 'receita')
-    .reduce((acc: number, t: any) => acc + Number(t.valor), 0);
+    .filter((t: Transacao) => t.tipo === 'receita')
+    .reduce((acc: number, t: Transacao) => acc + Number(t.valor), 0);
 
   const totalDespesas = transacoes
-    .filter((t: any) => t.tipo === 'despesa')
-    .reduce((acc: number, t: any) => acc + Number(t.valor), 0);
-
+    .filter((t: Transacao) => t.tipo === 'despesa')
+    .reduce((acc: number, t: Transacao) => acc + Number(t.valor), 0);
+    
   const saldoAtual = totalReceitas - totalDespesas;
-  
-  const salvarNovaTransacao = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userIdFinal = user?.id || 'e217e6c8-f132-40f5-81fe-b72bb00849ea';
 
-      if (!valorInput) return alert("Digite um valor!");
+  // Busca os dados do Supabase (A mesma lógica robusta que já estava funcionando)
+  useEffect(() => {
+    const buscarDadosReais = async () => {
+      try {
+        setACarregar(true);
+        const { data: { user } } = await supabase.auth.getUser();
 
-      const valorNumerico = parseFloat(valorInput.replace(/\./g, '').replace(',', '.'));
+        const cookieId = document.cookie.split('; ').find(row => row.startsWith('finance_user_id='))?.split('=')[1];
+        const userIdFinal = user?.id || cookieId;
 
-      const { error } = await supabase.from('transactions').insert([{
-        description: descricaoInput || "Nova Transação",
-        amount: valorNumerico,
-        type: tipoInput,
-        user_id: userIdFinal,
-        date: dataInput
-      }]);
-
-      if (error) throw error;
-
-      setIsModalOpen(false);
-      window.location.reload(); 
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao salvar! Verifique a conexão.");
-    }
-  };
-
-useEffect(() => {
-  const buscarDadosReais = async () => {
-    try {
-      setACarregar(true);
-      const { data: { user } } = await supabase.auth.getUser();
-
-      // 1. Pega o ID de qualquer jeito (Supabase ou Cookie)
-      const cookieId = document.cookie.split('; ').find(row => row.startsWith('finance_user_id='))?.split('=')[1];
-      const userIdFinal = user?.id || cookieId;
-
-      // 2. Lógica do Nome
-      if (user) {
-        const { data: profile } = await supabase.from('users').select('username').eq('id', user.id).single();
-        setNomeUsuario(profile?.username || user.email?.split('@')[0] || "Usuário");
-      } else {
-        const cookieNome = document.cookie.split('; ').find(row => row.startsWith('finance_user_name='))?.split('=')[1];
-        setNomeUsuario(cookieNome ? decodeURIComponent(cookieNome).split('@')[0] : "Usuário");
-      }
-
-      // 3. BUSCA FILTRADA (Se não tiver ID, nem busca para não vazar dado)
-      if (userIdFinal) {
-        const { data, error } = await supabase
-          .from('transactions')
-          .select('*')
-          .eq('user_id', userIdFinal) // 🟢 FILTRO CRÍTICO
-          .order('date', { ascending: false });
-
-        if (error) throw error;
-
-        if (data) {
-          const formatadas = data.map((t: any) => {
-            // 🟢 TRATAMENTO DE DATA ROBUSTO (Resolve o erro da Helena)
-            const dataPura = t.date.split('T')[0]; // Pega só AAAA-MM-DD
-            const [ano, mes, dia] = dataPura.split('-');
-            return {
-              id: t.id,
-              descricao: t.description,
-              valor: t.amount,
-              tipo: t.type,
-              data: `${dia}/${mes}/${ano}`
-            };
-          });
-          setTransacoes(formatadas);
+        if (user) {
+          const { data: profile } = await supabase.from('users').select('username').eq('id', user.id).single();
+          setNomeUsuario(profile?.username || user.email?.split('@')[0] || "Usuário");
+        } else {
+          const cookieNome = document.cookie.split('; ').find(row => row.startsWith('finance_user_name='))?.split('=')[1];
+          setNomeUsuario(cookieNome ? decodeURIComponent(cookieNome).split('@')[0] : "Usuário");
         }
+
+        if (userIdFinal) {
+          const { data, error } = await supabase
+            .from('transactions')
+            .select('*')
+            .eq('user_id', userIdFinal)
+            .order('date', { ascending: false });
+
+          if (error) throw error;
+
+          if (data) {
+            const formatadas = data.map((t: { id: number; date: string; description: string; amount: number; type: 'receita' | 'despesa'; receipt_url?: string | null }) => {
+              const dataPura = t.date.split('T')[0]; 
+              const [ano, mes, dia] = dataPura.split('-');
+              return {
+                id: t.id,
+                descricao: t.description,
+                valor: t.amount,
+                tipo: t.type,
+                data: `${dia}/${mes}/${ano}`,
+                receipt_url: t.receipt_url
+              };
+            });
+            setTransacoes(formatadas);
+          }
+        }
+      } catch (erro) {
+        console.error("Erro ao carregar dashboard:", erro);
+      } finally {
+        setACarregar(false);
       }
-    } catch (erro) {
-      console.error("Erro ao carregar dashboard:", erro);
-    } finally {
-      setACarregar(false);
-    }
-  };
+    };
 
-  buscarDadosReais();
-}, []);
-
-  const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, "");
-    if (value === "") { setValorInput(""); return; }
-    value = (Number(value) / 100).toFixed(2) + "";
-    value = value.replace(".", ",");
-    value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
-    setValorInput(value);
-  };
+    buscarDadosReais();
+  }, []);
 
   const lidarComSair = async () => {
     await supabase.auth.signOut();
     document.cookie = "finance_user_name=; Max-Age=0; path=/;";
+    document.cookie = "finance_user_id=; Max-Age=0; path=/;";
     window.location.href = "/login";
   };
 
@@ -162,100 +134,19 @@ useEffect(() => {
           </div>
         </div>
 
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300 group">
-            <h3 className="text-gray-500 text-sm font-bold tracking-wider mb-2 group-hover:text-[#25b461] transition-colors uppercase">Entradas</h3>
-            <div className={`text-2xl text-[#25b461] ${rugen.className}`}>R$ {totalReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300 group">
-            <h3 className="text-gray-500 text-sm font-bold tracking-wider mb-2 group-hover:text-red-500 transition-colors uppercase">Saídas</h3>
-            <div className={`text-2xl text-red-500 ${rugen.className}`}>R$ {totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-2 h-full bg-[#2c3e50]"></div>
-            <h3 className="text-gray-500 text-sm font-bold tracking-wider mb-2 group-hover:text-[#2c3e50] transition-colors uppercase">Saldo Atual</h3>
-            <div className={`text-3xl text-[#2c3e50] ${rugen.className}`}>R$ {saldoAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-          </div>
-        </section>
+        {/* Aqui injetamos os componentes que você criou! */}
+        <SummaryCards receitas={totalReceitas} despesas={totalDespesas} saldo={saldoAtual} />
+        
+        <TransactionTable 
+          transacoes={transacoes} 
+          aCarregar={aCarregar} 
+          onOpenModal={() => setIsModalOpen(true)} 
+        />
 
-        <section className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-            <h2 className="text-xl font-bold text-gray-800">Últimas Transações</h2>
-            <button onClick={() => setIsModalOpen(true)} className="md:hidden bg-[#25b461] text-white p-2 rounded-md text-sm font-bold active:scale-95 transition-transform">+ Nova</button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="text-gray-400 text-xs uppercase font-semibold bg-white border-b border-gray-100">
-                  <th className="px-6 py-4">Data</th>
-                  <th className="px-6 py-4">Descrição</th>
-                  <th className="px-6 py-4">Tipo</th>
-                  <th className="px-6 py-4 text-right">Valor</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {aCarregar ? (
-                  <tr><td colSpan={4} className="text-center py-8 text-gray-500 font-bold animate-pulse">A puxar dados do servidor... ⏳</td></tr>
-                ) : transacoes.length === 0 ? (
-                  <tr><td colSpan={4} className="text-center py-8 text-gray-500 font-bold">Nenhuma transação encontrada.</td></tr>
-                ) : (
-                  transacoes.map((item: any) => (
-                    <tr key={item.id} className="hover:bg-green-50/30 transition-colors group">
-                      <td className="px-6 py-4 text-sm text-gray-500 font-medium">{item.data}</td>
-                      <td className="px-6 py-4 text-sm font-bold text-gray-800">{item.descricao}</td>
-                      <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${item.tipo === 'receita' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                          {item.tipo === 'receita' ? 'Receita' : 'Despesa'}
-                        </span>
-                      </td>
-                      <td className={`px-6 py-4 text-right font-bold ${item.tipo === 'receita' ? 'text-green-600' : 'text-red-500'}`}>
-                        {item.tipo === 'receita' ? '+' : '-'} R$ {Number(item.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
       </main>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-              <h2 className="text-xl font-bold text-[#2c3e50]">Nova Transação</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-red-500 transition font-bold text-xl">✕</button>
-            </div>
-            <div className="p-6">
-              <form className="flex flex-col gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Descrição</label>
-                  <input type="text" value={descricaoInput} onChange={(e) => setDescricaoInput(e.target.value)} placeholder="Ex: Conta de Luz" className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#25b461] transition" />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Valor (R$)</label>
-                  <input type="text" value={valorInput} onChange={handleValorChange} placeholder="0,00" className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#25b461] transition" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Tipo</label>
-                    <select value={tipoInput} onChange={(e) => setTipoInput(e.target.value)} className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#25b461] transition bg-white">
-                      <option value="despesa">Saída (Despesa)</option>
-                      <option value="receita">Entrada (Receita)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Data</label>
-                    <input type="date" value={dataInput} onChange={(e) => setDataInput(e.target.value)} className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#25b461] transition text-gray-600" />
-                  </div>
-                </div>
-                <button type="button" onClick={salvarNovaTransacao} className="w-full bg-[#25b461] hover:bg-[#1e914d] text-white font-bold py-3 rounded-lg mt-2 transition active:scale-[0.98]">Salvar Transação</button>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* O Modal de Nova Transação agora vive no próprio arquivo dele */}
+      <TransactionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
 }

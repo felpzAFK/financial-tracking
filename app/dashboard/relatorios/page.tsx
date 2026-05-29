@@ -3,43 +3,98 @@
 import Image from "next/image";
 import Link from "next/link";
 import localFont from "next/font/local";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase"; 
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const rugen = localFont({
   src: "../../../public/fonts/RugenExpanded.ttf",
   display: "swap",
 });
 
+const CORES_PIZZA = ['#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899'];
+
+interface DadosMensais {
+  mes: string;
+  receitas: number;
+  despesas: number;
+}
+
+interface DadosDespesas {
+  name: string;
+  value: number;
+}
+
 export default function RelatoriosPage() {
-  // 👇 Estado para controlar a animação
-  const [animarBarras, setAnimarBarras] = useState(false);
+  // 2. APLICAMOS AS INTERFACES AQUI
+  const [dadosMensais, setDadosMensais] = useState<DadosMensais[]>([]);
+  const [dadosDespesas, setDadosDespesas] = useState<DadosDespesas[]>([]);
+  const [aCarregar, setACarregar] = useState(true);
 
-  // 👇 Dispara a animação logo após a tela montar
   useEffect(() => {
-    // Um pequeno atraso de 100ms para dar tempo da transição de página terminar
-    const timer = setTimeout(() => {
-      setAnimarBarras(true);
-    }, 100);
-    return () => clearTimeout(timer);
+    async function carregarRelatorios() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const cookieId = document.cookie.split('; ').find(row => row.startsWith('finance_user_id='))?.split('=')[1];
+        const userIdFinal = user?.id || cookieId || 'e217e6c8-f132-40f5-81fe-b72bb00849ea';
+
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('amount, type, date, description')
+          .eq('user_id', userIdFinal);
+
+        if (error) throw error;
+
+        if (data) {
+          const mesesAgrupados: Record<string, DadosMensais> = {};
+          
+          data.forEach(t => {
+            const dataObj = new Date(t.date);
+            const nomeMes = dataObj.toLocaleDateString('pt-BR', { month: 'short', timeZone: 'UTC' }).replace('.', '');
+            const ano = dataObj.getFullYear().toString().slice(-2);
+            const labelMes = `${nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}/${ano}`;
+
+            if (!mesesAgrupados[labelMes]) {
+              mesesAgrupados[labelMes] = { mes: labelMes, receitas: 0, despesas: 0 };
+            }
+
+            if (t.type === 'receita') {
+              mesesAgrupados[labelMes].receitas += t.amount;
+            } else {
+              mesesAgrupados[labelMes].despesas += t.amount;
+            }
+          });
+
+          setDadosMensais(Object.values(mesesAgrupados));
+
+          const despesas = data.filter(t => t.type === 'despesa');
+          const despesasAgrupadas: Record<string, number> = {};
+
+          despesas.forEach(d => {
+            if (!despesasAgrupadas[d.description]) despesasAgrupadas[d.description] = 0;
+            despesasAgrupadas[d.description] += d.amount;
+          });
+
+          const topDespesas: DadosDespesas[] = Object.keys(despesasAgrupadas)
+            .map(chave => ({ name: chave, value: despesasAgrupadas[chave] }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 5);
+
+          setDadosDespesas(topDespesas);
+        }
+      } catch (erro) {
+        console.error("Erro ao carregar relatórios:", erro);
+      } finally {
+        setACarregar(false);
+      }
+    }
+
+    carregarRelatorios();
   }, []);
-
-  const despesasPorCategoria = [
-    { categoria: "Moradia", valor: 1600, cor: "bg-indigo-500", percentual: "45%" },
-    { categoria: "Alimentação", valor: 650, cor: "bg-blue-500", percentual: "25%" },
-    { categoria: "Transporte", valor: 300, cor: "bg-[#25b461]", percentual: "15%" },
-    { categoria: "Lazer", valor: 200, cor: "bg-yellow-500", percentual: "10%" },
-    { categoria: "Outros", valor: 100, cor: "bg-red-400", percentual: "5%" },
-  ];
-
-  const metasFinanceiras = [
-    { titulo: "Reserva de Emergência", atual: 5420, meta: 10000, percentual: "54%", cor: "bg-[#25b461]" },
-    { titulo: "Trocar de PC", atual: 1500, meta: 5000, percentual: "30%", cor: "bg-[#2c3e50]" },
-  ];
 
   return (
     <div className="min-h-screen bg-[#f4f7f6] font-sans text-gray-800">
       
-      {/* HEADER REUTILIZADO COM MENU */}
       <header className="bg-[#2c3e50] text-white p-4 flex justify-between items-center shadow-md sticky top-0 z-40">
         <div className="flex items-center gap-3 ml-2 md:ml-5">
           <Image src="/porcocaze1.PNG" alt="Logo" width={40} height={40} className="rounded-md" />
@@ -58,106 +113,78 @@ export default function RelatoriosPage() {
           <Link href="/dashboard" className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md font-semibold transition text-sm text-white hidden sm:block">
             Voltar
           </Link>
-          <button className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md font-semibold transition text-sm text-white shadow-sm">
-            Sair
-          </button>
         </div>
       </header>
 
       <main className="p-4 md:p-8 max-w-6xl mx-auto">
-        
-        {/* TÍTULO COM EFEITO 3D OFFSET */}
-        <div className="mb-8 flex justify-between items-end">
-          <div>
-            <h1 className={`text-4xl text-[#2c3e50] tracking-wide ${rugen.className} [text-shadow:_3px_3px_0_#25b461]`}>
-              Relatorios e Metas
-            </h1>
-            <p className="text-gray-500 mt-2 font-medium">Acompanhe a distribuição dos seus gastos e o progresso dos seus objetivos.</p>
-          </div>
-          <button className="hidden md:block border-2 border-[#2c3e50] text-[#2c3e50] font-bold px-4 py-2 rounded-md hover:bg-[#2c3e50] hover:text-white transition active:scale-95 shadow-sm">
-            Exportar PDF
-          </button>
+        <div className="mb-8">
+          <h1 className={`text-4xl text-[#2c3e50] tracking-wide ${rugen.className} [text-shadow:_3px_3px_0_#25b461]`}>
+            Visao Geral
+          </h1>
+          <p className="text-gray-500 mt-2 font-medium">Analise a saúde das suas finanças com gráficos baseados em dados reais.</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
-          {/* SESSÃO 1: GRÁFICO DE DESPESAS */}
-          <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition duration-300">
-            <h2 className={`text-2xl text-[#2c3e50] mb-6 border-b border-gray-100 pb-4 ${rugen.className}`}>
-              Despesas por Categoria
-            </h2>
-            
-            <div className="space-y-5">
-              {despesasPorCategoria.map((item, index) => (
-                <div key={index}>
-                  <div className="flex justify-between text-sm font-bold text-gray-700 mb-1">
-                    <span>{item.categoria}</span>
-                    <span>R$ {item.valor.toFixed(2).replace('.', ',')}</span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
-                    {/* 👇 Aqui a mágica acontece: começa com 0% e vai para o percentual real */}
-                    <div 
-                      className={`${item.cor} h-3 rounded-full transition-all duration-1000 ease-out`}
-                      style={{ width: animarBarras ? item.percentual : "0%" }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* SESSÃO 2: METAS FINANCEIRAS */}
-          <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition duration-300">
-            <h2 className={`text-2xl text-[#2c3e50] mb-6 border-b border-gray-100 pb-4 ${rugen.className}`}>
-              Metas Financeiras
-            </h2>
-            
-            <div className="space-y-8">
-              {metasFinanceiras.map((meta, index) => (
-                <div key={index} className="group">
-                  <div className="flex justify-between items-end mb-2">
-                    <h3 className="font-bold text-gray-800 text-lg">{meta.titulo}</h3>
-                    <div className="text-right">
-                      <span className="text-xl font-bold text-gray-800">R$ {meta.atual.toLocaleString('pt-BR')}</span>
-                      <span className="text-sm text-gray-400 font-medium block">de R$ {meta.meta.toLocaleString('pt-BR')}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden relative border border-gray-200">
-                    {/* 👇 Mágica aplicada nas metas também */}
-                    <div 
-                      className={`${meta.cor} h-full transition-all duration-1000 ease-out flex items-center justify-end pr-2`}
-                      style={{ width: animarBarras ? meta.percentual : "0%" }}
-                    >
-                      <span className="text-[10px] text-white font-bold whitespace-nowrap opacity-90">
-                        {animarBarras ? meta.percentual : ""}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <button className="mt-8 w-full border-2 border-dashed border-gray-300 text-gray-500 font-bold py-3 rounded-lg hover:border-[#25b461] hover:text-[#25b461] transition active:scale-95 flex items-center justify-center gap-2">
-              <span>+</span> Criar Nova Meta
-            </button>
-          </section>
-
-        </div>
-
-        {/* SESSÃO EXTRA: CARD DE ALERTA DE SAÚDE FINANCEIRA */}
-        <section className="mt-8 bg-gradient-to-r from-[#2c3e50] to-[#1a252f] rounded-xl shadow-lg p-6 flex flex-col md:flex-row items-center justify-between border-l-4 border-[#25b461]">
-          <div className="mb-4 md:mb-0">
-            <h3 className={`text-white text-xl tracking-wide ${rugen.className}`}>Saude Financeira: Excelente</h3>
-            <p className="text-gray-300 mt-1 text-sm">Você economizou 15% a mais este mês em comparação com o mês passado.</p>
+        {aCarregar ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#25b461]"></div>
           </div>
-          <div className="text-right">
-            <Link href="/dashboard/historico" className="bg-[#25b461] hover:bg-[#1e914d] text-white px-6 py-2.5 rounded-lg font-bold transition active:scale-95 shadow-md inline-block">
-              Ver Histórico
-            </Link>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h2 className="text-lg font-bold text-[#2c3e50] mb-6">Receitas vs. Despesas (Evolução)</h2>
+              <div className="h-80 w-full">
+                {dadosMensais.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={dadosMensais} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                      <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fill: '#6b7280' }} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280' }} dx={-10} />
+                      <Tooltip cursor={{ fill: '#f3f4f6' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                      <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                      <Bar dataKey="receitas" name="Receitas" fill="#25b461" radius={[4, 4, 0, 0]} barSize={30} />
+                      <Bar dataKey="despesas" name="Despesas" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={30} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-gray-400">Sem dados suficientes.</div>
+                )}
+              </div>
+            </section>
+
+            <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h2 className="text-lg font-bold text-[#2c3e50] mb-6">As Suas Maiores Despesas</h2>
+              <div className="h-80 w-full">
+                {dadosDespesas.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={dadosDespesas}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={80}
+                        outerRadius={110}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {dadosDespesas.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={CORES_PIZZA[index % CORES_PIZZA.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: unknown) => `R$ ${Number(value || 0).toFixed(2)}`} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                      <Legend iconType="circle" layout="vertical" verticalAlign="middle" align="right" />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-gray-400">Ainda não registou despesas.</div>
+                )}
+              </div>
+            </section>
+
           </div>
-        </section>
+        )}
       </main>
+
     </div>
   );
 }

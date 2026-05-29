@@ -6,10 +6,10 @@ Projeto desenvolvido para a disciplina de Desenvolvimento Web. Focado em perform
 - **Felipe (Felpz):** Tech Lead e Lead Front-end
 - **Helena Brito:** Back-end Dev
 - **David Moraes:** CRUD, Database e Segurança
-- **Victor da Costa Silva:** Auxiliar Front-End
 
 ## Antigos membros
 - **Gusta Cazé:** Front-end & Performance
+- **Victor da Costa Silva:** Auxiliar Front-End
 - **Rafael Queiroz:** Security Specialist
 
 ## Tecnologias
