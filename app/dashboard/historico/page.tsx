@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import localFont from "next/font/local";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { createBrowserClient } from '@supabase/ssr';
 
 const rugen = localFont({
   src: "../../../public/fonts/RugenExpanded.ttf",
@@ -19,6 +19,7 @@ interface TransacaoHistorico {
   valor: number;
   tipo: 'receita' | 'despesa';
   receipt_url?: string | null;
+  cor: string;
 }
 
 export default function HistoricoPage() {
@@ -32,12 +33,21 @@ export default function HistoricoPage() {
 
   useEffect(() => {
     async function buscarHistorico() {
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        const cookieId = document.cookie.split('; ').find(row => row.startsWith('finance_user_id='))?.split('=')[1];
-        const userIdFinal = user?.id || cookieId || 'e217e6c8-f132-40f5-81fe-b72bb00849ea';
+        if (!user) {
+          setACarregar(false);
+          return;
+        }
+        const userIdFinal = user.id;
 
-        // Busca as transações reais ordenadas da mais recente para a mais antiga
+        const { data: categoriasData } = await supabase.from('categories').select('*');
+
         const { data, error } = await supabase
           .from('transactions')
           .select('*')
@@ -50,14 +60,20 @@ export default function HistoricoPage() {
           const formatadas = data.map((t: any) => {
             const dataPura = t.date.split('T')[0];
             const [ano, mes, dia] = dataPura.split('-');
+            
+            const cat = categoriasData?.find((c: any) => c.id === t.category_id);
+            const nomeCategoria = cat ? `${cat.icon} ${cat.name}` : "Geral";
+            const corCategoria = cat ? cat.color : "#9ca3af";
+
             return {
               id: t.id,
               descricao: t.description,
-              categoria: "Geral", // Categoria fixa até o BD ser atualizado
+              categoria: nomeCategoria,
+              cor: corCategoria,
               valor: t.amount,
               tipo: t.type,
               data: `${dia}/${mes}/${ano}`,
-              receipt_url: t.receipt_url
+              receipt_url: t.receipt_url,
             };
           });
           setTransacoes(formatadas);
@@ -72,18 +88,16 @@ export default function HistoricoPage() {
     buscarHistorico();
   }, []);
 
-  // 1. Lógica do Filtro de Pesquisa
   const transacoesFiltradas = transacoes.filter((t) => 
     t.descricao.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // 2. Lógica da Paginação
   const totalPaginas = Math.ceil(transacoesFiltradas.length / itensPorPagina);
   const indexInicio = (paginaAtual - 1) * itensPorPagina;
   const indexFim = indexInicio + itensPorPagina;
   const transacoesDaPagina = transacoesFiltradas.slice(indexInicio, indexFim);
 
-  // Funções de navegação
+
   const irParaPaginaAnterior = () => {
     if (paginaAtual > 1) setPaginaAtual(paginaAtual - 1);
   };
@@ -128,8 +142,6 @@ export default function HistoricoPage() {
           </h1>
           <p className="text-gray-500 mt-2 font-medium">Consulte e filtre todas as suas movimentações financeiras reais.</p>
         </div>
-
-        {/* 1. BARRA DE PESQUISA FUNCIONAL */}
         <section className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row gap-4 items-center">
           <div className="relative w-full md:w-1/2">
             <span className="absolute left-3 top-3 text-gray-400">🔍</span>
@@ -142,8 +154,6 @@ export default function HistoricoPage() {
             />
           </div>
         </section>
-
-        {/* TABELA DE HISTÓRICO */}
         <section className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -182,9 +192,12 @@ export default function HistoricoPage() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                          {item.categoria}
-                        </span>
+                      <span 
+                        style={{ backgroundColor: `${item.cor}20`, color: item.cor }} 
+                        className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                      >
+                        {item.categoria}
+                      </span>
                       </td>
                       <td className="px-6 py-4 text-sm font-bold text-gray-800 text-right">
                         <span className={item.tipo === 'receita' ? 'text-green-600' : 'text-red-600'}>
@@ -197,8 +210,6 @@ export default function HistoricoPage() {
               </tbody>
             </table>
           </div>
-          
-          {/* 2. PAGINAÇÃO REAL E DINÂMICA */}
           <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
             <span className="text-sm text-gray-500 font-medium">
               Mostrando {transacoesFiltradas.length === 0 ? 0 : indexInicio + 1} a {Math.min(indexFim, transacoesFiltradas.length)} de {transacoesFiltradas.length} transações

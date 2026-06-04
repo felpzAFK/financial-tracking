@@ -1,5 +1,14 @@
-import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { useState, useEffect } from "react";
+import { createBrowserClient } from '@supabase/ssr';
+import { getCategories } from "@/lib/categories";
+
+interface Category {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  type: string;
+}
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -7,14 +16,29 @@ interface TransactionModalProps {
 }
 
 export default function TransactionModal({ isOpen, onClose }: TransactionModalProps) {
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
   const [descricaoInput, setDescricaoInput] = useState("");
   const [valorInput, setValorInput] = useState("");
   const [tipoInput, setTipoInput] = useState("despesa");
   const [dataInput, setDataInput] = useState(new Date().toISOString().split('T')[0]);
-  
-  // Novos estados para gerir o ficheiro e o carregamento
+  const [categoriaInput, setCategoriaInput] = useState("");
+  const [categorias, setCategorias] = useState<Category[]>([]);
   const [ficheiro, setFicheiro] = useState<File | null>(null);
   const [aGuardar, setAGuardar] = useState(false);
+  
+  useEffect(() => {
+    if (isOpen) {
+      getCategories().then(setCategorias).catch(console.error);
+    }
+  }, [isOpen]);
+
+  // Filtra categorias pelo tipo selecionado
+  const categoriasFiltradas = categorias.filter(
+    (cat) => cat.type === tipoInput || cat.type === "ambos"
+  );
 
   if (!isOpen) return null;
 
@@ -35,11 +59,17 @@ export default function TransactionModal({ isOpen, onClose }: TransactionModalPr
 
   const salvarNovaTransacao = async () => {
     try {
-      setAGuardar(true); // Bloqueia o botão para não enviar 2 vezes
-      const { data: { user } } = await supabase.auth.getUser();
+      setAGuardar(true);
       
-      const cookieId = document.cookie.split('; ').find(row => row.startsWith('finance_user_id='))?.split('=')[1];
-      const userIdFinal = user?.id || cookieId || 'e217e6c8-f132-40f5-81fe-b72bb00849ea';
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user || !user.id) {
+        alert("Sessão inválida! Por favor, recarregue a página ou faça login novamente.");
+        setAGuardar(false);
+        return;
+      }
+
+      const userIdFinal = user.id; 
 
       if (!valorInput) {
         alert("Digita um valor!");
@@ -50,10 +80,9 @@ export default function TransactionModal({ isOpen, onClose }: TransactionModalPr
       const valorNumerico = parseFloat(valorInput.replace(/\./g, '').replace(',', '.'));
       let receiptUrl = null;
 
-      // 1. Se o utilizador escolheu uma imagem, fazemos o UPLOAD primeiro
       if (ficheiro) {
         const fileExt = ficheiro.name.split('.').pop();
-        const fileName = `${userIdFinal}-${Date.now()}.${fileExt}`; 
+        const fileName = `${userIdFinal}-${Date.now()}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from('comprovantes')
@@ -62,8 +91,8 @@ export default function TransactionModal({ isOpen, onClose }: TransactionModalPr
         if (uploadError) throw uploadError;
 
         const { data: res } = supabase.storage
-        .from('comprovantes')
-        .getPublicUrl(fileName);
+          .from('comprovantes')
+          .getPublicUrl(fileName);
 
         receiptUrl = res.publicUrl;
       }
@@ -74,13 +103,14 @@ export default function TransactionModal({ isOpen, onClose }: TransactionModalPr
         type: tipoInput,
         user_id: userIdFinal,
         date: dataInput,
-        receipt_url: receiptUrl
+        receipt_url: receiptUrl,
+        category_id: categoriaInput || null, 
       }]);
 
       if (error) throw error;
 
       onClose();
-      window.location.reload(); 
+      window.location.reload();
     } catch (err) {
       console.error(err);
       alert("Erro ao guardar a transação! Verifica a ligação.");
@@ -106,22 +136,25 @@ export default function TransactionModal({ isOpen, onClose }: TransactionModalPr
               <label className="block text-sm font-bold text-gray-700 mb-1">Valor (R$)</label>
               <input type="text" value={valorInput} onChange={handleValorChange} placeholder="0,00" className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#25b461] transition" />
             </div>
-            
-            {/* NOVO CAMPO: Upload de Ficheiro */}
+
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-1">Comprovativo (Opcional)</label>
-              <input 
-                type="file" 
+              <input
+                type="file"
                 accept="image/*,application/pdf"
-                onChange={handleFileChange} 
-                className="w-full p-2 border border-gray-200 rounded-lg text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 transition" 
+                onChange={handleFileChange}
+                className="w-full p-2 border border-gray-200 rounded-lg text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 transition"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">Tipo</label>
-                <select value={tipoInput} onChange={(e) => setTipoInput(e.target.value)} className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#25b461] transition bg-white">
+                <select
+                  value={tipoInput}
+                  onChange={(e) => { setTipoInput(e.target.value); setCategoriaInput(""); }}
+                  className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#25b461] transition bg-white"
+                >
                   <option value="despesa">Saída (Despesa)</option>
                   <option value="receita">Entrada (Receita)</option>
                 </select>
@@ -131,10 +164,27 @@ export default function TransactionModal({ isOpen, onClose }: TransactionModalPr
                 <input type="date" value={dataInput} onChange={(e) => setDataInput(e.target.value)} className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#25b461] transition text-gray-600" />
               </div>
             </div>
-            
-            <button 
-              type="button" 
-              onClick={salvarNovaTransacao} 
+
+            {/* Novo campo: Categoria */}
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1">Categoria</label>
+              <select
+                value={categoriaInput}
+                onChange={(e) => setCategoriaInput(e.target.value)}
+                className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#25b461] transition bg-white"
+              >
+                <option value="">Selecionar categoria...</option>
+                {categoriasFiltradas.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.icon} {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              type="button"
+              onClick={salvarNovaTransacao}
               disabled={aGuardar}
               className={`w-full text-white font-bold py-3 rounded-lg mt-2 transition active:scale-[0.98] ${aGuardar ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#25b461] hover:bg-[#1e914d]'}`}
             >
