@@ -4,15 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import localFont from "next/font/local";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase"; 
+import { createBrowserClient } from '@supabase/ssr';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const rugen = localFont({
   src: "../../../public/fonts/RugenExpanded.ttf",
   display: "swap",
 });
-
-const CORES_PIZZA = ['#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899'];
 
 interface DadosMensais {
   mes: string;
@@ -23,10 +21,14 @@ interface DadosMensais {
 interface DadosDespesas {
   name: string;
   value: number;
+  fill: string;
 }
 
 export default function RelatoriosPage() {
-  // 2. APLICAMOS AS INTERFACES AQUI
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
   const [dadosMensais, setDadosMensais] = useState<DadosMensais[]>([]);
   const [dadosDespesas, setDadosDespesas] = useState<DadosDespesas[]>([]);
   const [aCarregar, setACarregar] = useState(true);
@@ -35,55 +37,62 @@ export default function RelatoriosPage() {
     async function carregarRelatorios() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        const cookieId = document.cookie.split('; ').find(row => row.startsWith('finance_user_id='))?.split('=')[1];
-        const userIdFinal = user?.id || cookieId || 'e217e6c8-f132-40f5-81fe-b72bb00849ea';
+        if (!user) {
+          setACarregar(false);
+          return;
+        }
+        const userIdFinal = user.id;
 
+        const { data: categoriasData } = await supabase.from('categories').select('*');
+        
         const { data, error } = await supabase
           .from('transactions')
-          .select('amount, type, date, description')
-          .eq('user_id', userIdFinal);
+          .select('*')
+          .eq('user_id', userIdFinal)
+          .order('date', { ascending: true });
 
         if (error) throw error;
 
         if (data) {
-          const mesesAgrupados: Record<string, DadosMensais> = {};
-          
-          data.forEach(t => {
-            const dataObj = new Date(t.date);
-            const nomeMes = dataObj.toLocaleDateString('pt-BR', { month: 'short', timeZone: 'UTC' }).replace('.', '');
-            const ano = dataObj.getFullYear().toString().slice(-2);
-            const labelMes = `${nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}/${ano}`;
+          const receitasMes: Record<string, number> = {};
+          const despesasMes: Record<string, number> = {};
+          const despesasCategoria: Record<string, { value: number, color: string }> = {};
 
-            if (!mesesAgrupados[labelMes]) {
-              mesesAgrupados[labelMes] = { mes: labelMes, receitas: 0, despesas: 0 };
-            }
+          data.forEach((t: any) => {
+            const dataPura = t.date.split('T')[0];
+            const [ano, mes] = dataPura.split('-');
+            const mesAno = `${mes}/${ano}`; 
 
             if (t.type === 'receita') {
-              mesesAgrupados[labelMes].receitas += t.amount;
-            } else {
-              mesesAgrupados[labelMes].despesas += t.amount;
+              receitasMes[mesAno] = (receitasMes[mesAno] || 0) + t.amount;
+            } else if (t.type === 'despesa') {
+              despesasMes[mesAno] = (despesasMes[mesAno] || 0) + t.amount;
+              const cat = categoriasData?.find((c: any) => c.id === t.category_id);
+              const nomeCategoria = cat ? `${cat.icon} ${cat.name}` : "Geral";
+              const corCategoria = cat ? cat.color : "#9ca3af";
+              if (!despesasCategoria[nomeCategoria]) {
+                despesasCategoria[nomeCategoria] = { value: 0, color: corCategoria };
+              }
+              despesasCategoria[nomeCategoria].value += t.amount;
             }
           });
 
-          setDadosMensais(Object.values(mesesAgrupados));
+          const mesesUnicos = Array.from(new Set([...Object.keys(receitasMes), ...Object.keys(despesasMes)])).sort();
+          const formatadoMensal = mesesUnicos.map(mes => ({
+            mes,
+            receitas: receitasMes[mes] || 0,
+            despesas: despesasMes[mes] || 0
+          }));
 
-          const despesas = data.filter(t => t.type === 'despesa');
-          const despesasAgrupadas: Record<string, number> = {};
+            const formatadoDespesas = Object.entries(despesasCategoria)
+            .map(([name, infos]) => ({ name, value: infos.value, fill: infos.color }))
+            .sort((a, b) => b.value - a.value);
 
-          despesas.forEach(d => {
-            if (!despesasAgrupadas[d.description]) despesasAgrupadas[d.description] = 0;
-            despesasAgrupadas[d.description] += d.amount;
-          });
-
-          const topDespesas: DadosDespesas[] = Object.keys(despesasAgrupadas)
-            .map(chave => ({ name: chave, value: despesasAgrupadas[chave] }))
-            .sort((a, b) => b.value - a.value)
-            .slice(0, 5);
-
-          setDadosDespesas(topDespesas);
+          setDadosMensais(formatadoMensal);
+          setDadosDespesas(formatadoDespesas);
         }
-      } catch (erro) {
-        console.error("Erro ao carregar relatórios:", erro);
+      } catch (err) {
+        console.error("Erro ao buscar relatórios:", err);
       } finally {
         setACarregar(false);
       }
@@ -119,7 +128,7 @@ export default function RelatoriosPage() {
       <main className="p-4 md:p-8 max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className={`text-4xl text-[#2c3e50] tracking-wide ${rugen.className} [text-shadow:_3px_3px_0_#25b461]`}>
-            Visao Geral
+            Visão Geral
           </h1>
           <p className="text-gray-500 mt-2 font-medium">Analise a saúde das suas finanças com gráficos baseados em dados reais.</p>
         </div>
@@ -168,7 +177,7 @@ export default function RelatoriosPage() {
                         dataKey="value"
                       >
                         {dadosDespesas.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={CORES_PIZZA[index % CORES_PIZZA.length]} />
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
                       <Tooltip formatter={(value: unknown) => `R$ ${Number(value || 0).toFixed(2)}`} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />

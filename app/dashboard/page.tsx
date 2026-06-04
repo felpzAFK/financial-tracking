@@ -13,8 +13,7 @@ import Image from "next/image";
 import Link from "next/link";
 import localFont from "next/font/local";
 import { useState, useEffect } from "react";
-import { createBrowserClient } from "@supabase/ssr";
-
+import { createBrowserClient } from '@supabase/ssr';
 import SummaryCards from "./components/SummaryCards";
 import TransactionTable from "./components/TransactionTable";
 import TransactionModal from "./components/TransactionModal";
@@ -117,7 +116,6 @@ export default function DashboardInterno() {
           <Link href="/dashboard/historico" className="text-gray-300 hover:text-white transition font-medium">Histórico</Link>
           <Link href="/dashboard/relatorios" className="text-gray-300 hover:text-white transition font-medium">Relatórios</Link>
         </nav>
-
         <div className="mr-2 md:mr-5 flex items-center gap-4">
           <span className="text-sm text-gray-300 hidden sm:block">Olá, <strong className="text-white">{nomeUsuario}</strong></span>
           <button onClick={lidarComSair} className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md font-semibold transition text-sm text-white shadow-sm">Sair</button>

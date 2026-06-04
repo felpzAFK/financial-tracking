@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { createBrowserClient } from '@supabase/ssr';
 import { getCategories } from "@/lib/categories";
 
 interface Category {
@@ -16,6 +16,10 @@ interface TransactionModalProps {
 }
 
 export default function TransactionModal({ isOpen, onClose }: TransactionModalProps) {
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
   const [descricaoInput, setDescricaoInput] = useState("");
   const [valorInput, setValorInput] = useState("");
   const [tipoInput, setTipoInput] = useState("despesa");
@@ -24,8 +28,7 @@ export default function TransactionModal({ isOpen, onClose }: TransactionModalPr
   const [categorias, setCategorias] = useState<Category[]>([]);
   const [ficheiro, setFicheiro] = useState<File | null>(null);
   const [aGuardar, setAGuardar] = useState(false);
-
-  // Carrega as categorias quando o modal abre
+  
   useEffect(() => {
     if (isOpen) {
       getCategories().then(setCategorias).catch(console.error);
@@ -57,10 +60,16 @@ export default function TransactionModal({ isOpen, onClose }: TransactionModalPr
   const salvarNovaTransacao = async () => {
     try {
       setAGuardar(true);
-      const { data: { user } } = await supabase.auth.getUser();
       
-      const cookieId = document.cookie.split('; ').find(row => row.startsWith('finance_user_id='))?.split('=')[1];
-      const userIdFinal = user?.id || cookieId || 'e217e6c8-f132-40f5-81fe-b72bb00849ea';
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user || !user.id) {
+        alert("Sessão inválida! Por favor, recarregue a página ou faça login novamente.");
+        setAGuardar(false);
+        return;
+      }
+
+      const userIdFinal = user.id; 
 
       if (!valorInput) {
         alert("Digita um valor!");
@@ -95,7 +104,7 @@ export default function TransactionModal({ isOpen, onClose }: TransactionModalPr
         user_id: userIdFinal,
         date: dataInput,
         receipt_url: receiptUrl,
-        category_id: categoriaInput || null,  // novo campo
+        category_id: categoriaInput || null, 
       }]);
 
       if (error) throw error;
