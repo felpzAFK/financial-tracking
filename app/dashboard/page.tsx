@@ -17,9 +17,11 @@ import { createBrowserClient } from '@supabase/ssr';
 import SummaryCards from "./components/SummaryCards";
 import TransactionTable from "./components/TransactionTable";
 import TransactionModal from "./components/TransactionModal";
+import { useTheme } from 'next-themes'
+import ProfileModal from "./components/ProfileModal";
 
-const rugen = localFont({
-  src: "../../public/fonts/RugenExpanded.ttf",
+const brigends = localFont({
+  src: "../../public/fonts/Brigends.otf",
   display: "swap",
 });
 
@@ -28,6 +30,7 @@ export default function DashboardInterno() {
   const [nomeUsuario, setNomeUsuario] = useState("Usuário");
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [aCarregar, setACarregar] = useState(true);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -54,11 +57,15 @@ export default function DashboardInterno() {
         const userIdFinal = user?.id || cookieId;
 
         if (user) {
-          const { data: profile } = await supabase.from('users').select('username').eq('id', user.id).single();
-          setNomeUsuario(profile?.username || user.email?.split('@')[0] || "Usuário");
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('id', user.id)
+            .single();
+          setNomeUsuario(profile?.display_name || user.email?.split('@')[0] || "Utilizador");
         } else {
           const cookieNome = document.cookie.split('; ').find(row => row.startsWith('finance_user_name='))?.split('=')[1];
-          setNomeUsuario(cookieNome ? decodeURIComponent(cookieNome).split('@')[0] : "Usuário");
+          setNomeUsuario(cookieNome ? decodeURIComponent(cookieNome).split('@')[0] : "Utilizador");
         }
 
         if (userIdFinal) {
@@ -94,6 +101,7 @@ export default function DashboardInterno() {
     };
 
     buscarDadosReais();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const lidarComSair = async () => {
@@ -103,29 +111,56 @@ export default function DashboardInterno() {
     window.location.href = "/login";
   };
 
+const { theme, setTheme } = useTheme()
+
   return (
     <div className="min-h-screen bg-[#f4f7f6] font-sans text-gray-800 relative">
       <header className="bg-[#2c3e50] text-white p-4 flex justify-between items-center shadow-md sticky top-0 z-40">
         <div className="flex items-center gap-3 ml-2 md:ml-5">
           <Image src="/porcocaze1.PNG" alt="Logo" width={40} height={40} className="rounded-md" />
-          <div className={`text-xl text-[#25b461] hidden md:block ${rugen.className}`}>Financial Tracking</div>
+          <div className={`text-xl text-[#25b461] hidden md:block ${brigends.className}`}>Financial Tracking</div>
         </div>
-        
         <nav className="hidden lg:flex items-center gap-8">
           <Link href="/dashboard" className="text-[#25b461] font-bold border-b-2 border-[#25b461] pb-1">Painel</Link>
           <Link href="/dashboard/historico" className="text-gray-300 hover:text-white transition font-medium">Histórico</Link>
-          <Link href="/dashboard/relatorios" className="text-gray-300 hover:text-white transition font-medium">Relatórios</Link>
+          <Link href="/dashboard/rela-torios" className="text-gray-300 hover:text-white transition font-medium">Relatórios</Link>
         </nav>
         <div className="mr-2 md:mr-5 flex items-center gap-4">
-          <span className="text-sm text-gray-300 hidden sm:block">Olá, <strong className="text-white">{nomeUsuario}</strong></span>
+          <span className="text-sm text-gray-300 hidden sm:block">
+            Olá,{' '}
+            <strong 
+              onClick={() => setIsProfileModalOpen(true)} 
+              className="text-white hover:text-[#25b461] cursor-pointer underline decoration-dotted decoration-[#25b461] underline-offset-4 transition-colors"
+              title="Clique para editar o perfil"
+            >
+              {nomeUsuario}
+            </strong>
+          </span>
           <button onClick={lidarComSair} className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md font-semibold transition text-sm text-white shadow-sm">Sair</button>
-        </div>
+<button
+    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+    className="p-2 rounded-lg bg-gray-700/50 hover:bg-gray-600/50 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-200 transition-colors"
+    aria-label="Alternar Tema"
+  >
+    {theme === 'dark' ? (
+      // Ícone de Sol ☀️
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-yellow-400">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m0 13.5V21M4.312 4.312l1.591 1.591M16.5 16.5l1.591 1.591M21 12h-2.25M5.25 12H3m4.312 7.688l1.591-1.591M16.5 7.5l1.591-1.591M12 7.5a4.5 4.5 0 110 9 4.5 4.5 0 010-9z" />
+      </svg>
+    ) : (
+      // Ícone de Lua 🌙
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-300">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+      </svg>
+    )}
+  </button>
+</div>
       </header>
 
       <main className="p-4 md:p-8 max-w-6xl mx-auto">
         <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <div>
-            <h1 className={`text-3xl text-[#2c3e50] tracking-wide ${rugen.className}`}>Bem-vindo de volta, {nomeUsuario}</h1>
+            <h1 className={`text-3xl text-[#2c3e50] tracking-wide ${brigends.className}`}>Bem-vindo de volta, {nomeUsuario}</h1>
             <p className="text-gray-500 mt-1">Aqui está o resumo das suas finanças deste mês.</p>
           </div>
           
@@ -145,6 +180,13 @@ export default function DashboardInterno() {
       </main>
 
       <TransactionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      
+      <ProfileModal 
+        isOpen={isProfileModalOpen} 
+        onClose={() => setIsProfileModalOpen(false)} 
+        currentName={nomeUsuario} 
+        onSave={(novoNome) => setNomeUsuario(novoNome)} 
+      />
     </div>
   );
 }

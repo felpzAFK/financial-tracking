@@ -7,8 +7,8 @@ import { useEffect, useState } from "react";
 import { createBrowserClient } from '@supabase/ssr';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
-const rugen = localFont({
-  src: "../../../public/fonts/RugenExpanded.ttf",
+const brigends = localFont({
+  src: "../../../public/fonts/Brigends.otf",
   display: "swap",
 });
 
@@ -99,6 +99,7 @@ export default function RelatoriosPage() {
     }
 
     carregarRelatorios();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -107,7 +108,7 @@ export default function RelatoriosPage() {
       <header className="bg-[#2c3e50] text-white p-4 flex justify-between items-center shadow-md sticky top-0 z-40">
         <div className="flex items-center gap-3 ml-2 md:ml-5">
           <Image src="/porcocaze1.PNG" alt="Logo" width={40} height={40} className="rounded-md" />
-          <div className={`text-xl text-[#25b461] hidden md:block ${rugen.className}`}>
+          <div className={`text-xl text-[#25b461] hidden md:block ${brigends.className}`}>
             Financial Tracking
           </div>
         </div>
@@ -127,7 +128,7 @@ export default function RelatoriosPage() {
 
       <main className="p-4 md:p-8 max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className={`text-4xl text-[#2c3e50] tracking-wide ${rugen.className} [text-shadow:_3px_3px_0_#25b461]`}>
+          <h1 className={`text-4xl text-[#2c3e50] tracking-wide ${brigends.className} [text-shadow:_3px_3px_0_#25b461]`}>
             Visão Geral
           </h1>
           <p className="text-gray-500 mt-2 font-medium">Analise a saúde das suas finanças com gráficos baseados em dados reais.</p>

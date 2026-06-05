@@ -6,8 +6,8 @@ import localFont from "next/font/local";
 import { useState, useEffect } from "react";
 import { createBrowserClient } from '@supabase/ssr';
 
-const rugen = localFont({
-  src: "../../../public/fonts/RugenExpanded.ttf",
+const brigends = localFont({
+  src: "../../../public/fonts/Brigends.otf",
   display: "swap",
 });
 
@@ -117,7 +117,7 @@ export default function HistoricoPage() {
       <header className="bg-[#2c3e50] text-white p-4 flex justify-between items-center shadow-md sticky top-0 z-40">
         <div className="flex items-center gap-3 ml-2 md:ml-5">
           <Image src="/porcocaze1.PNG" alt="Logo" width={40} height={40} className="rounded-md" />
-          <div className={`text-xl text-[#25b461] hidden md:block ${rugen.className}`}>
+          <div className={`text-xl text-[#25b461] hidden md:block ${brigends.className}`}>
             Financial Tracking
           </div>
         </div>
@@ -137,7 +137,7 @@ export default function HistoricoPage() {
 
       <main className="p-4 md:p-8 max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className={`text-4xl text-[#2c3e50] tracking-wide ${rugen.className} [text-shadow:_3px_3px_0_#25b461]`}>
+          <h1 className={`text-4xl text-[#2c3e50] tracking-wide ${brigends.className} [text-shadow:_3px_3px_0_#25b461]`}>
             Historico Detalhado
           </h1>
           <p className="text-gray-500 mt-2 font-medium">Consulte e filtre todas as suas movimentações financeiras reais.</p>
