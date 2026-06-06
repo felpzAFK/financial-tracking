@@ -26,14 +26,10 @@ export const metadata: Metadata = {
   description: "Acompanhe seus gastos, defina metas e assuma o controle.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode; }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${brigends.variable} antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#f4f7f6] dark:bg-[#0f172a] text-[#2c3e50] dark:text-gray-100 transition-colors duration-300`}>
         <Providers>
           {children}
         </Providers>
@@ -41,3 +37,4 @@ export default function RootLayout({
     </html>
   );
 }
+

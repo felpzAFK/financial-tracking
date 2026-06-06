@@ -5,6 +5,8 @@
   --foreground: #171717;
 }
 
+@variant dark (&:where(.dark, .dark *));
+
 @font-face {
   font-family: 'Rugen';
   src: url('/fonts/RugenExpanded.ttf') format('truetype');
