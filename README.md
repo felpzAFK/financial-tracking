@@ -3,14 +3,11 @@
 Projeto desenvolvido para a disciplina de Desenvolvimento Web. Focado em performance (Lighthouse 100/100) e segurança máxima.
 
 ## Equipe
-- **Felipe (Felpz):** Tech Lead e Lead Front-end
-- **David Moraes:** CRUD, Database e Segurança
+- **Felipe (Felpz):** Tech Lead & Full-Stack Architect
+- **David Moraes:** Lead Back-end & Database Engineer
 
-## Antigos membros
-- **Gusta Cazé:** Front-end & Performance
-- **Victor da Costa Silva:** Auxiliar Front-End
-- **Rafael Queiroz:** Security Specialist
-- **Helena Brito:** Back-end Dev
+## Créditos
+Agradecemos a colaboração dos antigos membros que ajudaram a pavimentar o caminho deste projeto: Gusta Cazé, Victor da Costa Silva, Helena Brito e Rafael Queiroz.
 
 ## Tecnologias
 - Next.js 16.1.6 (Turbopack)
@@ -18,7 +15,7 @@ Projeto desenvolvido para a disciplina de Desenvolvimento Web. Focado em perform
 - Supabase (Auth & Database)
 - Vercel (Deploy Contínuo)
 
-pra rodar:
+## Como rodar
 ```bash
 npm run dev
 # or
@@ -27,7 +24,6 @@ yarn dev
 pnpm dev
 # or
 bun dev
-```
 
 abra [http://localhost:3000](http://localhost:3000) no navegador pra ver resultados
 
