@@ -24,7 +24,7 @@ yarn dev
 pnpm dev
 # or
 bun dev
-
+bash```
 abra [http://localhost:3000](http://localhost:3000) no navegador pra ver resultados
 
 ## Learn More
