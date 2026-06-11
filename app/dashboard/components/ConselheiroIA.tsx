@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import localFont from "next/font/local";
 
 const brigends = localFont({
@@ -21,10 +21,20 @@ export default function ConselheiroIA({
 }: Props) {
   const [conselho, setConselho] = useState<string | null>(null);
   const [aCarregar, setACarregar] = useState(false);
+  const [personalidade, setPersonalidade] = useState("rigoroso");
+
+  useEffect(() => {
+    // Lê a personalidade das configurações ao montar o componente
+    const saved = localStorage.getItem("conselheiro_persona") || "rigoroso";
+    setPersonalidade(saved);
+  }, []);
 
   const pedirConselho = async () => {
     setACarregar(true);
     try {
+      const currentPersona = localStorage.getItem("conselheiro_persona") || "rigoroso";
+      setPersonalidade(currentPersona);
+
       const resposta = await fetch("/api/advisor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -32,6 +42,7 @@ export default function ConselheiroIA({
           saldo,
           gastosTotais,
           transacoes: transacoes.slice(0, 10),
+          personalidade: currentPersona, 
         }),
       });
 
@@ -63,9 +74,12 @@ export default function ConselheiroIA({
       <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex-1">
           <h2
-            className={`text-2xl text-[#25b461] tracking-wide mb-3 ${brigends.className}`}
+            className={`text-2xl text-[#25b461] tracking-wide mb-3 flex items-center gap-3 ${brigends.className}`}
           >
             Conselheiro IA
+            <span className="text-[10px] font-sans tracking-widest bg-white/10 px-2 py-1 rounded-md text-gray-400 uppercase">
+              {personalidade}
+            </span>
           </h2>
           {conselho ? (
             <p className="text-gray-200 italic font-medium leading-relaxed border-l-4 border-[#25b461] pl-4 py-1">
@@ -74,7 +88,7 @@ export default function ConselheiroIA({
           ) : (
             <p className="text-gray-400 text-sm font-medium">
               Quer saber o que a Inteligência Artificial pensa dos seus hábitos
-              financeiros deste mês? Cuidado, a verdade por vezes dói.
+              financeiros deste mês? Peça uma opinião!
             </p>
           )}
         </div>
