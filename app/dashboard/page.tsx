@@ -19,6 +19,8 @@ import ProfileModal from "./components/ProfileModal";
 import ConselheiroIA from "./components/ConselheiroIA";
 import SurvivalModeCard from "./components/SurvivalModeCard";
 import Sidebar from "./components/Sidebar";
+import TutorialBoasVindas from "./components/TutorialBoasVindas";
+import CookieConsent from "@/app/dashboard/components/CookieConsent";
 
 const brigends = localFont({
   src: "../../public/fonts/Brigends.otf",
@@ -129,7 +131,13 @@ export default function DashboardInterno() {
             </div>
             
             <div className="hidden md:flex gap-3">
-              <button onClick={() => setIsModalOpen(true)} className="bg-[#25b461] hover:bg-[#1e914d] text-white px-5 py-2.5 rounded-lg font-bold transition-all duration-200 active:scale-95 shadow-md flex items-center gap-2"><span>+</span> Nova Transação</button>
+              <button 
+                id="tour-nova-transacao" 
+                onClick={() => setIsModalOpen(true)} 
+                className="bg-[#25b461] hover:bg-[#1e914d] text-white px-5 py-2.5 rounded-lg font-bold transition-all duration-200 active:scale-95 shadow-md flex items-center gap-2"
+              >
+                <span>+</span> Nova Transação
+              </button>
             </div>
           </div>
 
@@ -139,6 +147,8 @@ export default function DashboardInterno() {
             transacoes={transacoes}/>
           
           <SummaryCards receitas={totalReceitas} despesas={totalDespesas} saldo={saldoAtual} />
+
+          <TutorialBoasVindas />
           
           <TransactionTable 
             transacoes={transacoes} 
@@ -150,7 +160,7 @@ export default function DashboardInterno() {
       </div>
 
       <TransactionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-      
+              <CookieConsent />
       <ProfileModal 
         isOpen={isProfileModalOpen} 
         onClose={() => setIsProfileModalOpen(false)} 

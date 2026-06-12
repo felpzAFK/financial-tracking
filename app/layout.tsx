@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "./providers";
 import "./globals.css";
 import localFont from "next/font/local"; 
-
+import CookieConsent from "@/app/dashboard/components/CookieConsent";
 
 const brigends = localFont({
   src: "../public/fonts/Brigends.otf",
@@ -33,6 +33,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Providers>
           {children}
         </Providers>
+        <CookieConsent />
       </body>
     </html>
   );

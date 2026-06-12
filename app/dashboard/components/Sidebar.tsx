@@ -77,7 +77,7 @@ export default function Sidebar({ nomeUsuario, avatarUrl, onOpenProfileModal, on
             </div>
           </div>
 
-          <nav className="flex flex-col gap-2">
+          <nav id="tour-sidebar" className="flex flex-col gap-2">
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2 mb-1">Navegação</p>
             {links.map((link) => {
               const isActive = pathname === link.href;

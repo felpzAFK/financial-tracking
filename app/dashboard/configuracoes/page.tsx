@@ -29,6 +29,12 @@ export default function ConfiguracoesPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
+  const reverTutorial = () => {
+    localStorage.removeItem("tutorial_concluido");
+    // Redireciona para a página principal onde o tutorial será engatilhado novamente
+    window.location.href = "/dashboard"; 
+  };
+
   useEffect(() => {
     let isMounted = true;
     if (isMounted) {
@@ -129,6 +135,7 @@ export default function ConfiguracoesPage() {
                 </div>
               </div>
             </section>
+            
             <section className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 transition-colors">
               <div className="flex items-center gap-3 mb-6 border-b border-gray-100 dark:border-slate-700 pb-4">
                 <span className="text-2xl">👤</span>
@@ -164,6 +171,7 @@ export default function ConfiguracoesPage() {
                 </div>
               </div>
             </section>
+            
             <section className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 transition-colors">
               <div className="flex items-center gap-3 mb-6 border-b border-gray-100 dark:border-slate-700 pb-4">
                 <span className="text-2xl">🎮</span>
@@ -214,7 +222,21 @@ export default function ConfiguracoesPage() {
                 </div>
               </div>
             </section>
-
+            
+            {/* SECÇÃO DE AJUDA - AGORA FORA DA GRELHA! */}
+            <section className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
+              <h2 className="text-xl font-bold text-[#2c3e50] dark:text-white mb-2">Precisa de Ajuda?</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-4 font-medium">
+                Esqueceu como alguma funcionalidade funciona? Pode refazer o tour guiado da plataforma a qualquer momento.
+              </p>
+              <button 
+                onClick={reverTutorial}
+                className="px-6 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-800 dark:text-white font-bold rounded-lg transition-colors flex items-center gap-2"
+              >
+                🔄 Repetir Tutorial
+              </button>
+            </section>
+            
           </div>
         </main>
       </div>
