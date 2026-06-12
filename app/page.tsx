@@ -65,7 +65,7 @@ export default function LandingPage() {
             </p>
             <div className="flex gap-4">
               <Link href="/login" className="inline-block bg-[#25b461] hover:bg-[#1e914d] text-white px-8 py-3.5 rounded-xl text-lg font-bold shadow-[0_0_20px_rgba(37,180,97,0.3)] hover:shadow-[0_0_30px_rgba(37,180,97,0.5)] transition-all active:scale-95">
-                Começar Agora 🚀
+                Começar Agora!
               </Link>
             </div>
           </div>
@@ -244,7 +244,7 @@ export default function LandingPage() {
             <h2 className="text-3xl md:text-4xl font-black text-white mb-6 leading-tight">Pronto para assumir o controle do seu dinheiro?</h2>
             <p className="text-green-100 mb-10 text-lg">Junte-se à plataforma e transforme a maneira como gere as suas finanças hoje mesmo.</p>
             <Link href="/login" className="inline-block bg-white text-[#2c3e50] px-10 py-4 rounded-xl text-lg font-black shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all active:scale-95">
-              Criar Conta Gratuitamente
+              Crie sua conta gratuitamente!
             </Link>
           </div>
         </section>
