@@ -16,14 +16,14 @@ export async function POST(request: Request) {
         
         switch (personalidade) {
             case "amigavel":
-                instrucaoPersonalidade = "Aja como um 'Treinador Financeiro Amigável'. Dê conselhos de forma empática, gentil e encorajadora. Use emojis simpáticos. Foque em motivar a pessoa a continuar a melhorar.";
+                instrucaoPersonalidade = "Aja como um 'Treinador Financeiro Amigável'. Dê conselhos de forma empática, gentil e encorajadora. Use emojis simpáticos. Foque em motivar a pessoa a continuar a melhorar, mesmo se o saldo estiver negativo.";
                 break;
             case "frio":
                 instrucaoPersonalidade = "Aja como um 'Analista de Dados Robótico'. Seja calculista, use termos técnicos e financeiros. Faça uma análise puramente lógica, impessoal e sem demonstrar emoções. Não use emojis.";
                 break;
             case "rigoroso":
             default:
-                instrucaoPersonalidade = "Aja como um 'Conselheiro Disciplinar'. Dê um feedback curto, direto e levemente sarcástico. Se a pessoa gastou muito com impulsos, dê uma bronca firme.";
+                instrucaoPersonalidade = "Aja como um 'Conselheiro Disciplinar'. Dê um feedback curto, direto e levemente sarcástico. Se a pessoa gastou muito com impulsos, dê uma bronca firme. Se o saldo for positivo, faça um elogio contido.";
                 break;
         }
 
