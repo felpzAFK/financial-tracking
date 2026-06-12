@@ -80,7 +80,7 @@ export default function SurvivalModeCard({ saldo }: Props) {
             Meta de Gasto Diário
           </p>
           <p className={`text-3xl font-black ${corTexto}`}>
-            R$ {Math.max(0, orcamentoDiario).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            {Math.max(0, orcamentoDiario).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
           </p>
           <p className="text-xs font-semibold text-gray-400 mt-1">
             para os próximos {diasRestantes} dias
