@@ -16,21 +16,22 @@
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 
-  const handleCadastro = async (e: React.FormEvent) => {
+const handleCadastro = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
     const { data, error } = await supabase.auth.signUp({ 
-        email, 
-        password 
+      email, 
+      password 
     });
     
     if (error) {
       alert("Erro: " + error.message);
       setLoading(false);
     } else {
-
-      router.push("/dashboard"); 
-      router.refresh(); 
+      // Pequeno truque: recarrega a página ou redireciona e dá um refresh
+      // O Supabase precisa desse tempo para "assentar" o cookie no browser
+      window.location.href = "/dashboard";
     }
   };
 

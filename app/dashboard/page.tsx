@@ -112,7 +112,7 @@ export default function DashboardInterno() {
     await supabase.auth.signOut();
     document.cookie = "finance_user_name=; Max-Age=0; path=/;";
     document.cookie = "finance_user_id=; Max-Age=0; path=/;";
-    window.location.href = "/login";
+    window.location.href = "/";
   };
 
   return (
