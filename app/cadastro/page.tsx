@@ -29,8 +29,6 @@ const handleCadastro = async (e: React.FormEvent) => {
       alert("Erro: " + error.message);
       setLoading(false);
     } else {
-      // Pequeno truque: recarrega a página ou redireciona e dá um refresh
-      // O Supabase precisa desse tempo para "assentar" o cookie no browser
       window.location.href = "/dashboard";
     }
   };

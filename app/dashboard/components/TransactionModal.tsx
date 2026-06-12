@@ -31,6 +31,8 @@ export default function TransactionModal({ isOpen, onClose }: TransactionModalPr
   const [categorias, setCategorias] = useState<Category[]>([]);
   const [ficheiro, setFicheiro] = useState<File | null>(null);
   const [aGuardar, setAGuardar] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   
   const [expenseIntent, setExpenseIntent] = useState<'survival' | 'well_being' | 'dopamine'>('survival');
 
@@ -65,11 +67,30 @@ export default function TransactionModal({ isOpen, onClose }: TransactionModalPr
     setValor(value);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFicheiro(e.target.files[0]);
-    }
-  };
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  setUploading(true);
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    
+    const { data, error } = await supabase.storage
+      .from('comprovantes')
+      .upload(fileName, file);
+
+    if (error) throw error;
+
+    const { data: urlData } = supabase.storage.from('comprovantes').getPublicUrl(fileName);
+    setReceiptUrl(urlData.publicUrl);
+  } catch (err) {
+    console.error("Erro no upload:", err);
+    alert("Falha ao subir comprovante.");
+  } finally {
+    setUploading(false);
+  }
+};
 
   const tentarSalvar = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,16 +112,7 @@ export default function TransactionModal({ isOpen, onClose }: TransactionModalPr
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      let receiptUrl = null;
 
-      if (ficheiro) {
-        const fileExt = ficheiro.name.split('.').pop();
-        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from('comprovantes').upload(fileName, ficheiro);
-        if (uploadError) throw uploadError;
-        const { data: res } = supabase.storage.from('comprovantes').getPublicUrl(fileName);
-        receiptUrl = res.publicUrl;
-      }
 
       const { error } = await supabase.from('transactions').insert([{
         description: descricao || "Nova Transação",
@@ -115,6 +127,7 @@ export default function TransactionModal({ isOpen, onClose }: TransactionModalPr
       }]);
 
       if (error) throw error;
+      
       onClose();
       window.location.reload();
     } catch (err) {
@@ -219,6 +232,16 @@ export default function TransactionModal({ isOpen, onClose }: TransactionModalPr
                       </option>
                     ))}
                   </select>
+                </div>
+                <div className="mt-4">
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Comprovante</label>
+                  <input 
+                    type="file" 
+                    onChange={handleFileChange}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                  />
+                  {uploading && <p className="text-xs text-blue-500 mt-1">A subir...</p>}
+                  {receiptUrl && <p className="text-xs text-green-500 mt-1">✅ Comprovante pronto!</p>}
                 </div>
 
                 {tipo === 'despesa' && (

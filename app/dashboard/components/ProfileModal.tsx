@@ -25,7 +25,6 @@ export default function ProfileModal({ isOpen, onClose, currentName, currentAvat
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // Atualiza os estados se as props mudarem
   useEffect(() => {
     if (isOpen) {
       setNome(currentName);
@@ -36,44 +35,31 @@ export default function ProfileModal({ isOpen, onClose, currentName, currentAvat
 
   if (!isOpen) return null;
 
-  // Lidar com a seleção da imagem no computador
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       setFile(selectedFile);
-      // Cria um link temporário para mostrar a foto no modal antes de guardar
       setAvatarPreview(URL.createObjectURL(selectedFile));
     }
   };
-
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setAGuardar(true);
-
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Utilizador não autenticado");
-
-      let avatarUrl = currentAvatar; // Mantém a antiga por defeito
-
-      // Se o utilizador escolheu uma nova imagem
+      let avatarUrl = currentAvatar; 
       if (file) {
         const fileExt = file.name.split('.').pop();
         const fileName = `${user.id}-${Date.now()}.${fileExt}`;
         
-        // Faz upload pro bucket
         const { error: uploadError } = await supabase.storage
           .from('avatars')
           .upload(fileName, file, { upsert: true });
-
         if (uploadError) throw uploadError;
-
-        // Pega o URL público
         const { data: res } = supabase.storage.from('avatars').getPublicUrl(fileName);
         avatarUrl = res.publicUrl;
       }
-
-      // Atualiza a tabela profiles com o novo nome e nova foto
       const { error: updateError } = await supabase
         .from('profiles')
         .upsert({ 
@@ -84,8 +70,6 @@ export default function ProfileModal({ isOpen, onClose, currentName, currentAvat
         });
 
       if (updateError) throw updateError;
-
-      // Envia os dados de volta para a página atualizar a UI na hr
       onSave(nome, avatarUrl || undefined);
       onClose();
 

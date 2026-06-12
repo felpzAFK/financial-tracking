@@ -50,7 +50,7 @@ export default function LandingPage() {
 
           <div className="md:w-1/2 space-y-8 z-10 relative">
             <div className="inline-block bg-[#25b461]/20 border border-[#25b461]/50 px-4 py-1.5 rounded-full text-[#25b461] font-bold text-xs uppercase tracking-widest mb-2 backdrop-blur-sm">
-              ✨ A sua nova vida financeira
+              ✨ A sua nova vida financeira começa aqui ✨
             </div>
             <h1 
               className={`text-5xl md:text-6xl leading-tight text-white tracking-wide ${rugen.className}`}
@@ -116,9 +116,9 @@ export default function LandingPage() {
           
           <div className="flex flex-col md:flex-row items-center gap-16 relative z-10">
             <div className="md:w-1/2 space-y-6">
-              <h2 className={`text-4xl text-white tracking-wide ${brigends.className}`}>Muito mais que uma planilha.</h2>
+              <h2 className={`text-4xl text-white tracking-wide ${brigends.className}`}>Muito mais que uma planilha</h2>
               <p className="text-gray-300 text-lg leading-relaxed font-medium">
-                Transformámos as finanças numa experiência envolvente. Com a nossa tecnologia, o sistema adapta-se aos seus hábitos e ajuda-o a dominar os gastos impulsivos.
+                Transformamos as finanças numa experiência envolvente. Com a nossa tecnologia, o sistema adapta-se aos seus hábitos e ajuda-o a dominar os gastos impulsivos.
               </p>
               
               <ul className="space-y-6 mt-8">
@@ -264,7 +264,7 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      <CookieConsent />
+
       
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes float {
