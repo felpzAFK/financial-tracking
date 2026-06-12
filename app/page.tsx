@@ -1,7 +1,10 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import localFont from "next/font/local";
-import CookieConsent from "@/app/dashboard/components/CookieConsent";
+import { useState, useCallback } from "react";
+// import CookieConsent from "@/app/dashboard/components/CookieConsent";
 
 const brigends = localFont({
   src: "../public/fonts/Brigends.otf",
@@ -13,17 +16,70 @@ const rugen = localFont({
   display: "swap",
 });
 
+const superMabroz = localFont({
+  src: "../public/fonts/SuperMabroz-G3YVP.otf",
+  display: "swap",
+});
+
 export default function LandingPage() {
+  const [contadorCliques, setContadorCliques] = useState(0);
+  const [mostrarCreditos, setMostrarCreditos] = useState(false);
+  const [porcos, setPorcos] = useState<{ id: number; x: number; y: number; tx: string; ty: string; rot: string }[]>([]);
+
+  const CLIQUES_NECESSARIOS = 15;
+
+  const lidarComCliqueLogo = useCallback((e: React.MouseEvent) => {
+    const audio = new Audio("/minecraft-pig-death.mp3");
+    audio.play().catch((err) => console.log("O navegador bloqueou o áudio:", err));
+
+    const novosCliques = contadorCliques + 1;
+    setContadorCliques(novosCliques);
+
+    const QUANTIDADE_POR_CLIQUE = 6;
+    const novosPorcos = Array.from({ length: QUANTIDADE_POR_CLIQUE }).map(() => {
+      const angulo = Math.random() * Math.PI * 2;
+      const forcaExplosao = 100 + Math.random() * 200; 
+
+      return {
+        id: Math.random(), 
+        x: e.clientX,
+        y: e.clientY,
+        tx: `${Math.cos(angulo) * forcaExplosao}px`, 
+        ty: `${Math.sin(angulo) * forcaExplosao}px`, 
+        rot: `${(Math.random() - 0.5) * 720}deg`,    
+      };
+    });
+    
+    setPorcos((prev) => [...prev, ...novosPorcos]);
+
+    const idsParaRemover = novosPorcos.map(p => p.id);
+    setTimeout(() => {
+      setPorcos((prev) => prev.filter((p) => !idsParaRemover.includes(p.id)));
+    }, 1000);
+
+    if (novosCliques === CLIQUES_NECESSARIOS) {
+      setMostrarCreditos(true);
+      setContadorCliques(0); 
+    }
+  }, [contadorCliques]);
+
   return (
-    <div className="min-h-screen bg-[#f4f7f6] text-[#333] font-sans scroll-smooth">
+    <div className="min-h-screen bg-[#f4f7f6] text-[#333] font-sans scroll-smooth relative">
+      
       {/* HEADER / NAVBAR */}
-      <header className="bg-[#2c3e50] text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-lg border-b border-white/10 transition-all">
-        <div className="flex items-center gap-3 ml-2 md:ml-5 group cursor-pointer">
+      <header className="bg-[#2c3e50] text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-lg border-b border-white/10 transition-all select-none">
+        
+        <div 
+          className="flex items-center gap-3 ml-2 md:ml-5 group cursor-pointer relative"
+          onClick={lidarComCliqueLogo}
+          title="Não clique muitas vezes..."
+        >
           <div className="relative overflow-hidden rounded-md">
             <Image src="/porcocaze1.PNG" alt="Logo" width={40} height={40} className="rounded-md transition-transform group-hover:scale-110 duration-300" />
           </div>
           <div className={`text-xl md:text-2xl text-[#25b461] ${brigends.className} group-hover:text-white transition-colors`}>Financial Tracking</div>
         </div>
+
         <nav className="space-x-8 mr-2 md:mr-5 flex items-center">
           <Link href="#features" className="hover:text-[#25b461] font-medium transition hidden md:block text-sm uppercase tracking-wider">Recursos</Link>
           <Link href="#ia" className="hover:text-[#25b461] font-medium transition hidden md:block text-sm uppercase tracking-wider">Inteligência Artificial</Link>
@@ -33,16 +89,99 @@ export default function LandingPage() {
         </nav>
       </header>
 
+      {/* RENDERIZA OS PORQUINHOS EXPLODINDO */}
+      {porcos.map((porco) => (
+        <div
+          key={porco.id}
+          className="fixed pointer-events-none z-[100] animate-explode-pig text-3xl drop-shadow-md"
+          style={{
+            left: porco.x - 20,
+            top: porco.y - 20,
+            '--tx': porco.tx,
+            '--ty': porco.ty,
+            '--rot': porco.rot,
+          } as React.CSSProperties}
+        >
+          🐷
+        </div>
+      ))}
+
+      {/* MODAL DE CRÉDITOS GOOFY AHH */}
+      {mostrarCreditos && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-300">
+          <div className="bg-gradient-to-br from-pink-300 via-purple-300 to-indigo-400 p-1 rounded-3xl shadow-[0_0_100px_rgba(236,72,153,0.5)] max-w-2xl w-full max-h-[90vh] overflow-y-auto transform rotate-1 hover:rotate-0 transition-transform relative custom-scrollbar">
+            
+            <div className="absolute inset-0 opacity-20 text-6xl flex flex-wrap justify-around items-center overflow-hidden pointer-events-none mix-blend-overlay">
+              <span className="animate-spin-slow">💰</span>
+              <span className="animate-bounce">🗿</span>
+              <span className="animate-pulse">💀</span>
+              <span className="animate-spin-slow">🐽</span>
+            </div>
+
+            <div className="bg-white/90 backdrop-blur-xl p-8 rounded-[22px] text-center relative z-10 border-4 border-dashed border-pink-400">
+              <button 
+                onClick={() => setMostrarCreditos(false)}
+                className="absolute top-2 right-4 text-3xl hover:scale-125 transition-transform"
+              >
+                ❌
+              </button>
+
+              <h2 className={`text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-violet-500 mb-6 ${superMabroz.className} animate-pulse`}>
+                CREDITOS BRABOS UwU
+              </h2>
+              
+              <div className="space-y-6 text-lg font-bold text-gray-700">
+                <div className="bg-gray-100 p-4 rounded-xl border-2 border-gray-200 transform -rotate-1 hover:rotate-1 transition-transform">
+                  <p className="text-sm text-gray-500 uppercase tracking-widest mb-1">Mestre do Código & Gambiarras</p>
+                  <p className={`text-3xl text-blue-600 ${superMabroz.className}`}>@felpz.xyz 💻</p>
+                  <p className="text-xs font-normal mt-1 italic">&quot;serio pq eu sempre lidero os trabalhos? vsf vocês&quot;</p>
+                </div>
+
+                <div className="bg-gray-100 p-4 rounded-xl border-2 border-gray-200 transform rotate-1 hover:-rotate-1 transition-transform">
+                  <p className="text-sm text-gray-500 uppercase tracking-widest mb-1">O Mascote Oficial</p>
+                  <p className={`text-3xl text-pink-500 ${superMabroz.className}`}>Porco Caze 🐷</p>
+                  <p className="text-xs font-normal mt-1 italic">&quot;Nosso querido cazé fazendo a boa, guardando o seu dinheiro (ele existe irl e fizemos homenagem a ele)&quot;</p>
+                </div>
+
+                <div className="bg-gray-100 p-4 rounded-xl border-2 border-gray-200 transform -rotate-1 hover:rotate-1 transition-transform">
+                  <p className="text-sm text-gray-500 uppercase tracking-widest mb-1">Guardião do Banco de Dados & Segurança</p>
+                  <p className={`text-3xl text-indigo-600 ${superMabroz.className}`}>David (darkm0on) 🛡️</p>
+                  <p className="text-xs font-normal mt-1 italic">&quot;Obrigado Marcelo Hely&quot;</p>
+                </div>
+
+                <div className="bg-gray-100 p-4 rounded-xl border-2 border-gray-200 transform rotate-1 hover:-rotate-1 transition-transform">
+                  <p className="text-sm text-gray-500 uppercase tracking-widest mb-1">Menção Honrosa</p>
+                  <p className={`text-xl text-green-600 `}>shotout para LiamVoid, que virou quase um mentor pra mim, e ajudou a fazer esse site bem melhor 🍷🗿</p>
+                </div>
+
+                <div className="bg-gray-100 p-4 rounded-xl border-2 border-gray-200 transform -rotate-1 hover:rotate-1 transition-transform shadow-[0_0_15px_rgba(249,115,22,0.3)]">
+                  <p className="text-sm text-gray-500 uppercase tracking-widest mb-1">E um salve especial para...</p>
+                  <p className={`text-4xl text-orange-500 ${superMabroz.className} animate-pulse`}>VOCE! 🫵</p>
+                  <p className="text-xs font-normal mt-1 italic">&quot;Obrigado por acessar o nosso site e clicar na logo igual a um psicopata &lt;3&quot;</p>
+                </div>
+              </div>
+
+              <div className="mt-8 pt-6 border-t-4 border-dotted border-gray-300 flex flex-col items-center">
+                <p className="text-sm font-black text-gray-400 animate-bounce mb-4">
+                  blud rlly thought he found a secret 💀😭
+                </p>
+                <Image
+                  src="/touhou-cirno.gif"
+                  alt="Cirno Dançando"
+                  width={128}
+                  height={128}
+                  className="rounded-xl shadow-lg border-2 border-purple-300 mix-blend-multiply"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* RESTO DO SITE */}
       <main className="pt-0">
-        {/* HERO SECTION */}
         <section className="relative flex flex-col md:flex-row items-center justify-between px-6 md:px-[10%] py-20 overflow-hidden min-h-[85vh] bg-black">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover z-0 opacity-40 mix-blend-luminosity"
-          >
+          <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover z-0 opacity-40 mix-blend-luminosity">
             <source src="videos/fundo.mp4" type="video/mp4" />
           </video>
 
@@ -52,9 +191,7 @@ export default function LandingPage() {
             <div className="inline-block bg-[#25b461]/20 border border-[#25b461]/50 px-4 py-1.5 rounded-full text-[#25b461] font-bold text-xs uppercase tracking-widest mb-2 backdrop-blur-sm">
               ✨ A sua nova vida financeira começa aqui ✨
             </div>
-            <h1 
-              className={`text-5xl md:text-6xl leading-tight text-white tracking-wide ${rugen.className}`}
-            >
+            <h1 className={`text-5xl md:text-6xl leading-tight text-white tracking-wide ${rugen.className}`}>
               Seu Futuro Financeiro em <span className="text-[#25b461] relative inline-block">
                 Ordem
                 <svg className="absolute -bottom-2 left-0 w-full h-3 text-[#25b461]/40" viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="transparent"/></svg>
@@ -85,7 +222,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* FEATURES SECTION */}
         <section id="features" className="py-24 px-[10%] bg-white grid grid-cols-1 md:grid-cols-3 gap-8 relative">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#25b461] to-transparent opacity-20"></div>
           
@@ -109,7 +245,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/*SECÇÃO: GAMIFICAÇÃO & IA */}
         <section id="ia" className="py-24 px-[10%] bg-[#2c3e50] text-white relative overflow-hidden">
           <div className="absolute top-20 right-20 w-96 h-96 bg-[#25b461]/10 blur-[120px] rounded-full pointer-events-none"></div>
           <div className="absolute bottom-20 left-20 w-72 h-72 bg-blue-500/10 blur-[100px] rounded-full pointer-events-none"></div>
@@ -172,7 +307,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* DEMO INTERFACE SECTION */}
         <section className="py-24 px-[10%] bg-gray-50 text-center">
           <div className="inline-block bg-[#2c3e50] text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4">Dashboard</div>
           <h2 className="text-3xl md:text-4xl font-bold mb-12 text-[#2c3e50]">Interface Simples e Poderosa</h2>
@@ -237,7 +371,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* CTA FINAL */}
         <section className="py-20 px-6 text-center bg-[#25b461] relative overflow-hidden">
           <div className="absolute inset-0 bg-black/10"></div>
           <div className="relative z-10 max-w-2xl mx-auto">
@@ -264,12 +397,32 @@ export default function LandingPage() {
         </div>
       </footer>
 
-
-      
+      {/* ESTILOS DA EXPLOSÃO DO PORQUINHO & SCROLLBAR */}
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes float {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-20px); }
+        }
+        @keyframes explodePig {
+          0% { transform: translate(0, 0) scale(0.5) rotate(0deg); opacity: 1; }
+          100% { transform: translate(var(--tx), var(--ty)) scale(1.5) rotate(var(--rot)); opacity: 0; }
+        }
+        .animate-explode-pig {
+          animation: explodePig 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(236, 72, 153, 0.5);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(236, 72, 153, 0.8);
         }
       `}} />
     </div>
