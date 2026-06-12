@@ -1,16 +1,17 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 
-// Inicializa o cliente do Gemini usando a nova biblioteca
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 export async function POST(request: Request) {
     try {
-        // Recebe os dados financeiros que o Dashboard vai enviar
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            throw new Error("GEMINI_API_KEY não encontrada no servidor!");
+        }
+
+        const ai = new GoogleGenAI({ apiKey: apiKey });
         const body = await request.json();
         const { saldo, gastosTotais, transacoes, personalidade } = body;
 
-        // Define as instruções com base na personalidade escolhida
         let instrucaoPersonalidade = "";
         
         switch (personalidade) {
@@ -26,45 +27,25 @@ export async function POST(request: Request) {
                 break;
         }
 
-        // Constrói o Prompt do Sistema combinando o papel base com a personalidade
-        const systemPrompt = `Você é um Conselheiro Financeiro inteligente da aplicação Financial Tracking.
-        ${instrucaoPersonalidade}
-        Sua missão é analisar o resumo financeiro atual e dar um feedback útil.
-        Responda no máximo em 2 ou 3 frases curtas.`;
-
-        // Constrói a mensagem do utilizador com os dados dinâmicos
-        const userPrompt = `
-            Aqui está o meu resumo financeiro atual:
-            - Saldo Restante: R$ ${saldo}
-            - Gastos Totais: R$ ${gastosTotais}
-            - Algumas transações recentes: ${JSON.stringify(transacoes.slice(0, 5))}
-            
-            O que você tem a dizer sobre isso?
-        `;
+        const systemPrompt = `Você é um Conselheiro Financeiro da aplicação Financial Tracking. ${instrucaoPersonalidade}`;
+        const userPrompt = `Resumo Financeiro: Saldo R$ ${saldo}, Gastos R$ ${gastosTotais}. Dê um conselho curto e prático.`;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: userPrompt,
+            model: 'gemini-2.5-flash', 
+            contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
             config: {
                 systemInstruction: systemPrompt,
                 temperature: 0.7, 
             }
         });
 
-        const conselho = response.text;
-
+        const conselho = response.text || "Sem resposta.";
         return NextResponse.json({ conselho });
 
     } catch (error: any) {
-        console.error('Erro ao gerar conselho da IA:', error);
-
-        const isOverloaded = error?.message?.includes('503') || error?.status === 503;
-        
+        console.error('ERRO DETALHADO:', error);
         return NextResponse.json(
-            { error: isOverloaded 
-                ? 'O conselheiro está ocupado demais processando dados no momento. Tente de novo em 1 minuto!' 
-                : 'A ligação com o conselheiro caiu. Verifique a sua conexão e tente novamente.' 
-            },
+            { error: error.message || "Erro desconhecido no servidor" }, 
             { status: 500 }
         );
     }

@@ -19,10 +19,37 @@ export default function ConfiguracoesPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [emailUsuario, setEmailUsuario] = useState("");
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [novoEmail, setNovoEmail] = useState("");
+  const [novaSenha, setNovaSenha] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Estados reais para as configurações
   const [alertaImpulso, setAlertaImpulso] = useState(true);
   const [conselheiroPersonalidade, setConselheiroPersonalidade] = useState("rigoroso");
+
+  const handleUpdateEmail = async () => {
+    if (!novoEmail) return;
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ email: novoEmail });
+    if (error) alert("Erro ao atualizar e-mail: " + error.message);
+    else {
+      alert("E-mail atualizado! Confirme a alteração na caixa de entrada do novo e-mail.");
+      setEmailUsuario(novoEmail);
+      setNovoEmail("");
+    }
+    setLoading(false);
+  };
+
+  const handleUpdatePassword = async () => {
+    if (novaSenha.length < 6) return alert("A senha deve ter pelo menos 6 caracteres.");
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: novaSenha });
+    if (error) alert("Erro ao atualizar senha: " + error.message);
+    else {
+      alert("Senha atualizada com sucesso!");
+      setNovaSenha("");
+    }
+    setLoading(false);
+  };  
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -141,7 +168,6 @@ export default function ConfiguracoesPage() {
                 <span className="text-2xl">👤</span>
                 <h2 className="text-xl font-bold text-[#2c3e50] dark:text-white">Dados do Perfil</h2>
               </div>
-              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Nome de Exibição</label>
@@ -158,6 +184,35 @@ export default function ConfiguracoesPage() {
                     >
                       Editar
                     </button>
+                  </div>
+                </div>
+                {/* E-mail (EDITÁVEL) */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">E-mail: {emailUsuario}</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="email" 
+                      placeholder="Novo e-mail" 
+                      value={novoEmail}
+                      onChange={(e) => setNovoEmail(e.target.value)}
+                      className="w-full p-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm"
+                    />
+                    <button onClick={handleUpdateEmail} disabled={loading} className="bg-[#25b461] text-white px-4 py-2 rounded-lg font-bold text-xs">Atualizar</button>
+                  </div>
+                </div>
+
+                {/* Senha (NOVO) */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Alterar Senha</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="password" 
+                      placeholder="Nova senha (mín. 6 caracteres)" 
+                      value={novaSenha}
+                      onChange={(e) => setNovaSenha(e.target.value)}
+                      className="w-full p-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm"
+                    />
+                    <button onClick={handleUpdatePassword} disabled={loading} className="bg-[#2c3e50] text-white px-4 py-2 rounded-lg font-bold text-xs">Alterar</button>
                   </div>
                 </div>
                 <div>
@@ -223,7 +278,7 @@ export default function ConfiguracoesPage() {
               </div>
             </section>
             
-            {/* SECÇÃO DE AJUDA - AGORA FORA DA GRELHA! */}
+
             <section className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
               <h2 className="text-xl font-bold text-[#2c3e50] dark:text-white mb-2">Precisa de Ajuda?</h2>
               <p className="text-gray-600 dark:text-gray-400 mb-4 font-medium">

@@ -56,7 +56,7 @@ export default function Sidebar({ nomeUsuario, avatarUrl, onOpenProfileModal, on
           <div className="flex items-center gap-3 border-b border-gray-700/50 pb-4">
             <Image src="/porcocaze1.PNG" alt="Logo" width={42} height={42} className="rounded-md" />
             <div className={`text-lg text-[#25b461] tracking-wider leading-none ${brigends.className}`}>
-               Financial<br /><span className="text-white text-xs tracking-widest">Tracking</span>
+                Financial<br /><span className="text-white text-xs tracking-widest">Tracking</span>
             </div>
           </div>
 

@@ -26,6 +26,7 @@ export async function createTransaction(transaction: {
   type: string
   date: string
   category_id: string
+  receipt_url?: string | null
 }) {
   const { data: { user } } = await supabase.auth.getUser()
 

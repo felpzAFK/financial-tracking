@@ -24,7 +24,6 @@ export default function ConselheiroIA({
   const [personalidade, setPersonalidade] = useState("rigoroso");
 
   useEffect(() => {
-    // Lê a personalidade das configurações ao montar o componente
     const saved = localStorage.getItem("conselheiro_persona") || "rigoroso";
     setPersonalidade(saved);
   }, []);

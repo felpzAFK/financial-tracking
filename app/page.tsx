@@ -50,7 +50,7 @@ export default function LandingPage() {
 
           <div className="md:w-1/2 space-y-8 z-10 relative">
             <div className="inline-block bg-[#25b461]/20 border border-[#25b461]/50 px-4 py-1.5 rounded-full text-[#25b461] font-bold text-xs uppercase tracking-widest mb-2 backdrop-blur-sm">
-              ✨ A sua nova vida financeira
+              ✨ A sua nova vida financeira começa aqui ✨
             </div>
             <h1 
               className={`text-5xl md:text-6xl leading-tight text-white tracking-wide ${rugen.className}`}
@@ -65,7 +65,7 @@ export default function LandingPage() {
             </p>
             <div className="flex gap-4">
               <Link href="/login" className="inline-block bg-[#25b461] hover:bg-[#1e914d] text-white px-8 py-3.5 rounded-xl text-lg font-bold shadow-[0_0_20px_rgba(37,180,97,0.3)] hover:shadow-[0_0_30px_rgba(37,180,97,0.5)] transition-all active:scale-95">
-                Começar Agora 🚀
+                Começar Agora!
               </Link>
             </div>
           </div>
@@ -116,9 +116,9 @@ export default function LandingPage() {
           
           <div className="flex flex-col md:flex-row items-center gap-16 relative z-10">
             <div className="md:w-1/2 space-y-6">
-              <h2 className={`text-4xl text-white tracking-wide ${brigends.className}`}>Muito mais que uma planilha.</h2>
+              <h2 className={`text-4xl text-white tracking-wide ${brigends.className}`}>Muito mais que uma planilha</h2>
               <p className="text-gray-300 text-lg leading-relaxed font-medium">
-                Transformámos as finanças numa experiência envolvente. Com a nossa tecnologia, o sistema adapta-se aos seus hábitos e ajuda-o a dominar os gastos impulsivos.
+                Transformamos as finanças numa experiência envolvente. Com a nossa tecnologia, o sistema adapta-se aos seus hábitos e ajuda-o a dominar os gastos impulsivos.
               </p>
               
               <ul className="space-y-6 mt-8">
@@ -244,7 +244,7 @@ export default function LandingPage() {
             <h2 className="text-3xl md:text-4xl font-black text-white mb-6 leading-tight">Pronto para assumir o controle do seu dinheiro?</h2>
             <p className="text-green-100 mb-10 text-lg">Junte-se à plataforma e transforme a maneira como gere as suas finanças hoje mesmo.</p>
             <Link href="/login" className="inline-block bg-white text-[#2c3e50] px-10 py-4 rounded-xl text-lg font-black shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all active:scale-95">
-              Criar Conta Gratuitamente
+              Crie sua conta gratuitamente!
             </Link>
           </div>
         </section>
@@ -264,7 +264,7 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      <CookieConsent />
+
       
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes float {
