@@ -43,7 +43,7 @@ export async function POST(request: Request) {
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-1.5-flash',
             contents: userPrompt,
             config: {
                 systemInstruction: systemPrompt,
@@ -55,17 +55,9 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ conselho });
 
-    } catch (error: any) {
+    } catch (error) {
         console.error('Erro ao gerar conselho da IA:', error);
-
-        const isOverloaded = error?.message?.includes('503') || error?.status === 503;
         
-        return NextResponse.json(
-            { error: isOverloaded 
-                ? 'O conselheiro está ocupado demais processando dados no momento. Tente de novo em 1 minuto!' 
-                : 'A ligação com o conselheiro caiu. Verifique a sua conexão e tente novamente.' 
-            },
-            { status: 500 }
-        );
+        return;
     }
 }
